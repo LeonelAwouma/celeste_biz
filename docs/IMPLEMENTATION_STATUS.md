@@ -9,8 +9,8 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | ----- | ------------------------------------------------ | ----------- |
 | 0     | Audit / cadrage du dépôt                         | ✅ terminée |
 | 1     | Fondations UX et structure de projet             | ✅ terminée |
-| 2     | Supabase Auth + isolement multi-entreprises      | ⏭ suivante  |
-| 3     | Onboarding et profils métiers                    | à faire     |
+| 2     | Supabase Auth + isolement multi-entreprises      | ✅ terminée |
+| 3     | Onboarding et profils métiers                    | ⏭ suivante  |
 | 4     | Clients et catalogue                             | à faire     |
 | 5     | Commandes et acomptes manuels                    | à faire     |
 | 6     | Devis + facturation (émission sous feature flag) | à faire     |
@@ -165,3 +165,74 @@ Contrôle visuel par captures (360 px et 1280 px).
 **Phase 2 — Supabase Auth + isolement multi-entreprises** : nécessite un
 projet Supabase (URL + clés) ou, à défaut, Supabase CLI en local (Docker)
 pour les migrations, la RLS et les tests pgTAP.
+
+---
+
+## Phase 2 — Supabase Auth + isolement multi-entreprises
+
+**Date :** 2026-10-25 · décisions : `docs/adr/0003-auth-and-tenancy.md`
+
+### Réalisé
+
+- Supabase local (CLI 2.122, Postgres 17) : `supabase/config.toml`
+  (confirmation d'e-mail activée, mot de passe 8 caractères lettres+chiffres,
+  modèles d'e-mail en français), migration
+  `20261025000001_tenancy_foundation.sql`, `seed.sql` fictif (2 entreprises,
+  3 comptes).
+- Schéma : `profiles` (créé automatiquement à l'inscription), `businesses`,
+  `business_members`, `audit_logs` ; RLS partout, fonctions d'autorisation
+  privées, privilèges par colonne, RPC `create_business`, `set_member_role`,
+  `revoke_member` (dernier propriétaire protégé, audit).
+- Next.js : `proxy.ts` (rafraîchissement de session + redirections),
+  inscription, confirmation par e-mail (`/auth/confirm`), connexion,
+  déconnexion, mot de passe oublié, nouveau mot de passe, création
+  d'entreprise minimale (`/onboarding`), sélecteur d'entreprise active dans
+  l'en-tête, garde de l'espace `/dashboard` (session + entreprise).
+- Formulaires accessibles (`components/forms/`), bouton désactivé pendant
+  l'envoi, valeurs conservées après erreur (jamais le mot de passe),
+  messages sans jargon.
+- L'application se construit et démarre sans Supabase (message explicite).
+
+### Tests exécutés et résultats
+
+| Commande               | Résultat                                             |
+| ---------------------- | ---------------------------------------------------- |
+| `npm run lint`         | ✅                                                   |
+| `npm run typecheck`    | ✅                                                   |
+| `npm run test`         | ✅ 8 fichiers, 41 tests                              |
+| `npm run format:check` | ✅                                                   |
+| `npm run test:db`      | ✅ pgTAP 36/36                                       |
+| `npm run build`        | ✅ avec et sans variables Supabase                   |
+| `npm run test:e2e`     | ✅ 34 tests (5 ignorés car propres à l'autre profil) |
+
+### Sécurité / tenancy vérifiées
+
+- pgTAP : anon sans aucun accès ; Alice ne lit ni l'entreprise, ni les
+  membres, ni l'audit, ni le profil de Bob, même avec l'ID ; écritures
+  forgées vers B sans effet ou refusées ; `owner_user_id`/`status` non
+  modifiables ; suppression et audit direct interdits ; staff sans
+  administration ni lecture d'audit ; dernier propriétaire protégé ;
+  révocation immédiate ; création atomique avec rôle `owner` et audit.
+- E2E : redirection vers la connexion puis retour à la page demandée,
+  `next` externe neutralisé, lien e-mail invalide refusé, message neutre
+  sur mauvais mot de passe et sur mot de passe oublié, inscription →
+  confirmation → entreprise → changement d'entreprise persistant,
+  réinitialisation du mot de passe par e-mail, Bob ne voit jamais l'entreprise
+  d'Alice même avec un cookie d'entreprise forgé, déconnexion.
+- Aucune clé secrète utilisée ni exposée ; `.env.local` ignoré par Git.
+
+### Limites et décisions à valider
+
+- **Projet Supabase hébergé non branché** (choix du propriétaire) : tout est
+  vérifié sur Supabase local. Procédure de branchement dans le README.
+- Invitations de membres reportées à la Phase 3 (onboarding, « inviter un
+  employé ») ; le changement de rôle et la révocation existent en base.
+- Pas encore de limitation de débit propre à l'application : on s'appuie sur
+  celle de Supabase Auth (à compléter en Phase 11).
+- Fermeture/export de compte (F01) : reportés aux Phases 11 et 16.
+
+### Prochaine phase
+
+**Phase 3 — Onboarding et profils métiers** : choix du métier (couture,
+traiteur, générique), registre versionné `profession_templates`, modules et
+champs activés sans IA, invitation d'un employé, site toujours facultatif.

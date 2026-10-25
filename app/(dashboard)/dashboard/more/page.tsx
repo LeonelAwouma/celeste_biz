@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 
 import { MORE_NAV } from "@/components/dashboard/navigation";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { SignOutButton } from "@/components/dashboard/sign-out-button";
 
 export const metadata: Metadata = { title: "Plus" };
 
@@ -35,6 +36,15 @@ export default function MorePage() {
           ))}
         </ul>
       </nav>
+      <div className="mt-4 flex flex-col gap-2">
+        <Link
+          href="/onboarding"
+          className="flex min-h-11 items-center px-4 text-primary"
+        >
+          Créer une autre entreprise
+        </Link>
+        <SignOutButton className="justify-start" />
+      </div>
     </>
   );
 }

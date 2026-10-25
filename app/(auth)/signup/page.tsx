@@ -1,14 +1,29 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
-import { AuthPlaceholder } from "@/components/auth/auth-placeholder";
+import { AuthCard } from "@/components/auth/auth-card";
+import { SignupForm } from "@/components/auth/signup-form";
 
 export const metadata: Metadata = { title: "Créer mon compte · Céleste Biz" };
 
-export default function Page() {
+export default function SignupPage() {
   return (
-    <AuthPlaceholder
+    <AuthCard
       title="Créer mon compte"
-      description="L'inscription sera disponible prochainement."
-    />
+      description="Gratuit pendant la phase pilote. Aucun site web requis."
+      footer={
+        <p>
+          Déjà inscrit ?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Se connecter
+          </Link>
+        </p>
+      }
+    >
+      <SignupForm />
+    </AuthCard>
   );
 }

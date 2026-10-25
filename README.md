@@ -17,13 +17,39 @@ pas d'IA générative dans le MVP.
 
 ## Démarrer en local
 
-Prérequis : Node.js 22 ou plus (voir `.nvmrc`) et npm.
+Prérequis : Node.js 22 ou plus (voir `.nvmrc`), npm et Docker (pour
+Supabase en local).
 
 ```bash
 npm ci
-cp .env.example .env.local   # facultatif tant que Supabase n'est pas branché (Phase 2)
+npm run db:start             # Supabase local (Postgres, Auth, Mailpit) + migrations + seed
+cp .env.example .env.local   # puis renseigner l'URL et la clé « publishable »
+                             # affichées par `npx supabase status`
 npm run dev                  # http://localhost:3000
 ```
+
+Sans Supabase, l'application démarre quand même : les pages de connexion
+indiquent que l'authentification n'est pas configurée.
+
+**Comptes fictifs du seed** (mot de passe `Motdepasse123`) :
+`alice@exemple.test` (propriétaire, Atelier Alice), `sam@exemple.test`
+(employé, Atelier Alice), `bob@exemple.test` (propriétaire, Délices de Bob).
+Les e-mails envoyés en local (confirmation, mot de passe oublié) sont lisibles
+dans Mailpit : http://127.0.0.1:54324.
+
+## Brancher un projet Supabase hébergé
+
+1. Appliquer les migrations : `npx supabase link --project-ref <ref>` puis
+   `npx supabase db push` (ne pas exécuter `seed.sql` en production).
+2. Variables Vercel : `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`.
+3. Auth → URL Configuration : _Site URL_ = URL de l'application, et
+   `<URL>/auth/confirm` dans les _Redirect URLs_.
+4. Auth → Email : activer la confirmation d'adresse, mot de passe de
+   8 caractères minimum avec lettres et chiffres, et reprendre les modèles
+   `supabase/templates/confirmation.html` et `recovery.html` (liens vers
+   `/auth/confirm` avec `token_hash`).
+5. Configurer un SMTP de production (l'envoi intégré de Supabase est limité).
 
 ## Scripts de validation
 
@@ -33,12 +59,14 @@ npm run dev                  # http://localhost:3000
 | `npm run typecheck`    | Génération des types de routes puis `tsc`        |
 | `npm run test`         | Tests unitaires Vitest (`tests/unit`)            |
 | `npm run format:check` | Vérification Prettier (`npm run format` corrige) |
+| `npm run test:db`      | Tests pgTAP (RLS, isolation entre entreprises)   |
 | `npm run build`        | Build de production Next.js                      |
 | `npm run test:e2e`     | Playwright, profils mobile 360 px et bureau      |
 | `npm run check`        | Enchaîne toutes les vérifications ci-dessus      |
 
-`npm run test:e2e` construit puis démarre l'application sur le port 3100.
-Le script `supabase test db` (pgTAP/RLS) arrivera en Phase 2.
+`npm run test:db` et `npm run test:e2e` nécessitent Supabase local démarré
+(`npm run db:start`). `npm run test:e2e` construit puis démarre l'application
+sur le port 3100 ; `npm run db:reset` remet la base dans l'état du seed.
 
 ## Règles de contribution
 

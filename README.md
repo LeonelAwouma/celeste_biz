@@ -11,7 +11,7 @@ factures et suivi client par lien privé. Le site web est **facultatif**.
 
 ## Stack
 
-Next.js (App Router) + React + TypeScript, Supabase (PostgreSQL, Auth,
+Next.js (App Router) + React + TypeScript, Tailwind CSS + shadcn/ui, Supabase (PostgreSQL, Auth,
 Storage, RLS), hébergement Vercel. Pas de Django, pas d'application native,
 pas d'IA générative dans le MVP.
 
@@ -34,10 +34,11 @@ npm run dev                  # http://localhost:3000
 | `npm run test`         | Tests unitaires Vitest (`tests/unit`)            |
 | `npm run format:check` | Vérification Prettier (`npm run format` corrige) |
 | `npm run build`        | Build de production Next.js                      |
+| `npm run test:e2e`     | Playwright, profils mobile 360 px et bureau      |
 | `npm run check`        | Enchaîne toutes les vérifications ci-dessus      |
 
-Les scripts `test:e2e` (Playwright) et `supabase test db` (pgTAP/RLS) seront
-ajoutés aux phases qui en ont besoin.
+`npm run test:e2e` construit puis démarre l'application sur le port 3100.
+Le script `supabase test db` (pgTAP/RLS) arrivera en Phase 2.
 
 ## Règles de contribution
 

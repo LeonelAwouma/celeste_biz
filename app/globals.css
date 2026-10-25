@@ -1,47 +1,97 @@
-/* Socle minimal (Phase 0). Le design system arrive en Phase 1. */
+@import "tailwindcss";
+
+/*
+ * Design tokens Céleste Biz (convention shadcn/ui : variables CSS + @theme).
+ * Contrastes visés : AA minimum (texte normal ≥ 4,5:1).
+ */
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --muted: #5b5b5b;
+  --radius: 0.75rem;
+  --background: oklch(0.985 0.003 247);
+  --foreground: oklch(0.21 0.03 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.03 260);
+  --primary: oklch(0.47 0.14 252);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.015 250);
+  --secondary-foreground: oklch(0.3 0.06 255);
+  --muted: oklch(0.96 0.006 250);
+  --muted-foreground: oklch(0.47 0.02 258);
+  --accent: oklch(0.94 0.03 250);
+  --accent-foreground: oklch(0.3 0.08 255);
+  --destructive: oklch(0.53 0.2 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.93 0.07 85);
+  --warning-foreground: oklch(0.36 0.08 60);
+  --border: oklch(0.91 0.01 250);
+  --input: oklch(0.88 0.012 250);
+  --ring: oklch(0.55 0.15 252);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #a3a3a3;
+    --background: oklch(0.17 0.02 260);
+    --foreground: oklch(0.96 0.005 250);
+    --card: oklch(0.21 0.025 260);
+    --card-foreground: oklch(0.96 0.005 250);
+    --primary: oklch(0.72 0.12 245);
+    --primary-foreground: oklch(0.18 0.03 260);
+    --secondary: oklch(0.27 0.03 258);
+    --secondary-foreground: oklch(0.94 0.01 250);
+    --muted: oklch(0.25 0.025 258);
+    --muted-foreground: oklch(0.74 0.02 255);
+    --accent: oklch(0.3 0.04 255);
+    --accent-foreground: oklch(0.95 0.01 250);
+    --destructive: oklch(0.68 0.18 25);
+    --destructive-foreground: oklch(0.18 0.03 260);
+    --warning: oklch(0.38 0.07 70);
+    --warning-foreground: oklch(0.95 0.04 85);
+    --border: oklch(0.3 0.025 258);
+    --input: oklch(0.34 0.025 258);
+    --ring: oklch(0.72 0.12 245);
   }
 }
 
-* {
-  box-sizing: border-box;
+@theme inline {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    Arial,
-    sans-serif;
-  line-height: 1.5;
-}
-
-.home {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-.notice {
-  color: var(--muted);
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
 }

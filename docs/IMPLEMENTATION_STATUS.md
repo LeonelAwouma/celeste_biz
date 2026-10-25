@@ -8,8 +8,8 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | Phase | Intitulé                                         | Statut      |
 | ----- | ------------------------------------------------ | ----------- |
 | 0     | Audit / cadrage du dépôt                         | ✅ terminée |
-| 1     | Fondations UX et structure de projet             | ⏭ suivante  |
-| 2     | Supabase Auth + isolement multi-entreprises      | à faire     |
+| 1     | Fondations UX et structure de projet             | ✅ terminée |
+| 2     | Supabase Auth + isolement multi-entreprises      | ⏭ suivante  |
 | 3     | Onboarding et profils métiers                    | à faire     |
 | 4     | Clients et catalogue                             | à faire     |
 | 5     | Commandes et acomptes manuels                    | à faire     |
@@ -100,3 +100,68 @@ implémentée à la première phase qui en a besoin.
 page d'accueil marketing, navigation (Aujourd'hui, Commandes, Clients,
 Factures, Catalogue, Mon site, Paramètres), design tokens, composants
 loading/error/empty, routes réservées, tests de base.
+
+---
+
+## Phase 1 — Fondations UX et structure de projet
+
+**Date :** 2026-10-25 · décisions : `docs/adr/0002-ui-foundations.md`
+
+### Réalisé
+
+- Tailwind CSS 4 + design tokens (clair/sombre) dans `app/globals.css`,
+  composants shadcn/ui `Button`, `Card`, `Skeleton` (`components/ui/`),
+  icônes `lucide-react`.
+- Page d'accueil marketing (`app/(marketing)/page.tsx`) : promesse, 6 atouts,
+  site présenté comme facultatif, liens inscription/connexion.
+- Coquille de l'espace commerçant (`components/dashboard/app-shell.tsx`) :
+  en-tête, barre latérale (≥ md), onglets en bas (mobile) avec « Plus »,
+  bouton « + Nouvelle commande » persistant, lien d'évitement, bandeau
+  « Connexion requise » hors ligne.
+- Espaces sous `/dashboard/*` : today, orders, orders/new, customers,
+  invoices, catalog, website, settings, quotes, payments, more — avec états
+  vides didactiques ; `/dashboard` redirige vers « Aujourd'hui ».
+- `loading.tsx` (squelette), `error.tsx` (Réessayer), `not-found.tsx` en
+  français.
+- Routes réservées : `/login`, `/signup`, `/reset-password` (annonce de
+  disponibilité prochaine, pas de faux formulaire), `/sites/[slug]` et
+  `/suivi/[token]` en 404 (aucune information révélée).
+- Script `test:e2e` (Playwright 1.63, profils `mobile-360` et `desktop`),
+  inclus dans `npm run check`.
+
+### Tests exécutés et résultats
+
+| Commande               | Résultat                                             |
+| ---------------------- | ---------------------------------------------------- |
+| `npm run lint`         | ✅                                                   |
+| `npm run typecheck`    | ✅                                                   |
+| `npm run test`         | ✅ 4 fichiers, 18 tests                              |
+| `npm run format:check` | ✅                                                   |
+| `npm run build`        | ✅ 21 pages (statiques + 2 routes réservées en PPR)  |
+| `npm run test:e2e`     | ✅ 15 tests (5 ignorés car propres à l'autre profil) |
+
+Couverture E2E : pas de défilement horizontal à 360 px sur l'accueil et les
+11 espaces, onglet actif (`aria-current`), cibles tactiles ≥ 44 px,
+navigation via « Plus », bouton « Nouvelle commande », lien d'évitement au
+clavier, 404 sur un jeton de suivi inconnu, barre latérale sur grand écran.
+Contrôle visuel par captures (360 px et 1280 px).
+
+### Sécurité / tenancy
+
+- Aucune donnée ni authentification encore : l'espace `/dashboard` est
+  public et ne contient que des états vides. Protection en Phase 2.
+- Espace commerçant et suivi marqués `noindex`.
+
+### Limites
+
+- Registre shadcn inaccessible depuis l'environnement : composants écrits à
+  la main selon les modèles shadcn (voir ADR-0002).
+- Pas d'audit Lighthouse ni de test sur appareil réel : à faire au pilotage
+  (Phase 12), aucun chiffre de performance n'est annoncé.
+- Le bascule thème sombre suit uniquement la préférence système.
+
+### Prochaine phase
+
+**Phase 2 — Supabase Auth + isolement multi-entreprises** : nécessite un
+projet Supabase (URL + clés) ou, à défaut, Supabase CLI en local (Docker)
+pour les migrations, la RLS et les tests pgTAP.

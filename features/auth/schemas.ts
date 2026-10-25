@@ -48,6 +48,8 @@ export type FormState = {
   fieldErrors?: Record<string, string[] | undefined>;
   /** Valeurs saisies (jamais les mots de passe), réaffichées après erreur. */
   values?: Record<string, string>;
+  /** Résultat à afficher après succès (ex. lien d'invitation). */
+  data?: Record<string, string>;
 };
 
 /** Champs non sensibles d'un formulaire, pour les réafficher après erreur. */

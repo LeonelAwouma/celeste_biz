@@ -30,7 +30,7 @@ test("l'espace protégé renvoie vers la connexion puis vers la page demandée",
 });
 
 test("un mot de passe erroné donne un message neutre", async ({ page }) => {
-  await login(page, SEED.alice, "MauvaisMotdepasse1");
+  await login(page, SEED.alice, "MauvaisMotdepasse1", { expectFailure: true });
   await expect(
     page.getByText("E-mail ou mot de passe incorrect."),
   ).toBeVisible();

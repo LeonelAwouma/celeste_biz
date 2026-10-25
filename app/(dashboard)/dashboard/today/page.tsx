@@ -1,31 +1,28 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { CalendarCheck } from "lucide-react";
 
 import { PageHeader } from "@/components/dashboard/page-header";
-import { NEW_ORDER_HREF } from "@/components/dashboard/navigation";
-import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/feedback/empty-state";
+import { GettingStarted } from "@/components/today/getting-started";
+import { ProfessionSummary } from "@/components/today/profession-summary";
+import { getBusinessContext } from "@/features/businesses/active-business";
 
 export const metadata: Metadata = { title: "Aujourd'hui" };
 
-export default function Page() {
+export default async function TodayPage() {
+  const context = await getBusinessContext();
+
   return (
     <>
       <PageHeader
         title="Aujourd'hui"
-        description="Ce qu'il y a à faire aujourd'hui."
+        description={`Bienvenue dans l'espace de ${context.business.name}.`}
       />
-      <EmptyState
-        icon={CalendarCheck}
-        title="Rien à faire pour l'instant"
-        description="Vos livraisons proches, soldes à encaisser et devis en attente apparaîtront ici dès votre première commande."
-        action={
-          <Button asChild>
-            <Link href={NEW_ORDER_HREF}>Nouvelle commande</Link>
-          </Button>
-        }
-      />
+      <div className="flex flex-col gap-4">
+        <GettingStarted context={context} />
+        <ProfessionSummary
+          template={context.template}
+          modules={context.modules}
+        />
+      </div>
     </>
   );
 }

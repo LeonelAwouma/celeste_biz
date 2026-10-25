@@ -54,13 +54,53 @@ describe("schémas d'authentification", () => {
 
 describe("création d'entreprise", () => {
   it("exige un nom d'au moins 2 caractères", () => {
-    expect(createBusinessSchema.safeParse({ name: " A " }).success).toBe(false);
+    expect(
+      createBusinessSchema.safeParse({ name: " A ", professionKey: "generic" })
+        .success,
+    ).toBe(false);
   });
 
-  it("rend la ville facultative", () => {
-    expect(createBusinessSchema.parse({ name: "Atelier", city: "" })).toEqual({
+  it("rend la ville et le WhatsApp facultatifs", () => {
+    expect(
+      createBusinessSchema.parse({
+        name: "Atelier",
+        professionKey: "couture",
+        city: "",
+        whatsappPhone: "",
+      }),
+    ).toEqual({
       name: "Atelier",
+      professionKey: "couture",
       city: undefined,
+      whatsappPhone: undefined,
     });
+  });
+
+  it("exige un métier connu", () => {
+    expect(createBusinessSchema.safeParse({ name: "Atelier" }).success).toBe(
+      false,
+    );
+    expect(
+      createBusinessSchema.safeParse({
+        name: "Atelier",
+        professionKey: "pilote",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("normalise le numéro WhatsApp", () => {
+    const parsed = createBusinessSchema.parse({
+      name: "Atelier",
+      professionKey: "couture",
+      whatsappPhone: "6 77 12 34 56",
+    });
+    expect(parsed.whatsappPhone).toBe("+237677123456");
+    expect(
+      createBusinessSchema.safeParse({
+        name: "Atelier",
+        professionKey: "couture",
+        whatsappPhone: "12",
+      }).success,
+    ).toBe(false);
   });
 });

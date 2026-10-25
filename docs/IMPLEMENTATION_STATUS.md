@@ -10,8 +10,8 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | 0     | Audit / cadrage du dépôt                         | ✅ terminée |
 | 1     | Fondations UX et structure de projet             | ✅ terminée |
 | 2     | Supabase Auth + isolement multi-entreprises      | ✅ terminée |
-| 3     | Onboarding et profils métiers                    | ⏭ suivante  |
-| 4     | Clients et catalogue                             | à faire     |
+| 3     | Onboarding et profils métiers                    | ✅ terminée |
+| 4     | Clients et catalogue                             | ⏭ suivante  |
 | 5     | Commandes et acomptes manuels                    | à faire     |
 | 6     | Devis + facturation (émission sous feature flag) | à faire     |
 | 7     | Tableau « Aujourd'hui »                          | à faire     |
@@ -236,3 +236,78 @@ pour les migrations, la RLS et les tests pgTAP.
 **Phase 3 — Onboarding et profils métiers** : choix du métier (couture,
 traiteur, générique), registre versionné `profession_templates`, modules et
 champs activés sans IA, invitation d'un employé, site toujours facultatif.
+
+---
+
+## Phase 3 — Onboarding et profils métiers
+
+**Date :** 2026-10-25 · décisions : `docs/adr/0004-profession-templates.md`
+
+### Réalisé
+
+- Registre versionné des profils `couture`, `catering` (pâtisserie/traiteur)
+  et `generic` en v1 : champs de commande (ex. type de vêtement, mesures
+  privées, date d'essayage / date d'événement, portions, mode de remise),
+  étapes de réalisation, libellés, modules proposés.
+- Migration `20261025000002_professions_settings_invitations.sql` :
+  `profession_templates` (immuable), `businesses.profession_version` + clé
+  étrangère, `business_settings` (modules, image de marque, profil fiscal
+  privé), nouvelles RPC `create_business` (métier + WhatsApp),
+  `set_business_profession`, `list_business_members`, invitations
+  (`create_invitation`, `revoke_invitation`, `get_invitation`,
+  `accept_invitation`) avec jeton haché SHA-256, usage unique, 7 jours,
+  réservé à l'adresse invitée.
+- Onboarding : nom, choix du métier (cartes radio), ville, numéro WhatsApp
+  normalisé E.164 (format camerounais accepté sans indicatif).
+- « Aujourd'hui » : premiers pas adaptés au métier (« première prestation »,
+  « première commande sur mesure »…), étapes facultatives (inviter, créer mon
+  site) clairement indiquées, résumé de la configuration métier.
+- Paramètres : informations de l'entreprise, métier, modules facultatifs,
+  équipe (changement de rôle et retrait avec confirmation), invitations par
+  lien à copier ou partager sur WhatsApp (aucun envoi automatique), lecture
+  seule pour les non-propriétaires.
+- Page `/invitation/[token]` : rien n'est révélé sans connexion ; parcours
+  inscription → confirmation e-mail → retour à l'invitation → acceptation.
+- Validation serveur des informations métier d'une commande prête pour la
+  Phase 5.
+
+### Tests exécutés et résultats
+
+| Commande                   | Résultat                                              |
+| -------------------------- | ----------------------------------------------------- |
+| `npm run lint`             | ✅                                                    |
+| `npm run typecheck`        | ✅                                                    |
+| `npm run test`             | ✅ 10 fichiers, 74 tests                              |
+| `npm run format:check`     | ✅                                                    |
+| `npm run test:db`          | ✅ pgTAP 69/69 (2 fichiers)                           |
+| `npm run test:integration` | ✅ registre TypeScript = table `profession_templates` |
+| `npm run build`            | ✅                                                    |
+| `npm run test:e2e`         | ✅ 50 tests (5 ignorés car propres à l'autre profil)  |
+
+### Sécurité / tenancy vérifiées
+
+- pgTAP : réglages d'une autre entreprise ni lisibles ni modifiables ;
+  modules cœur non désactivables ; profil fiscal non modifiable ; staff sans
+  modification ni changement de métier ; adresses e-mail des membres visibles
+  du propriétaire seulement ; pas d'invitation au rôle propriétaire, ni dans
+  une autre entreprise, ni d'un membre existant ; hachage du jeton illisible ;
+  invitation refusée pour une autre adresse ; lien à usage unique.
+- E2E : invitation forgée sans information, invitation ouverte avec un autre
+  compte refusée, employé en lecture seule dans les paramètres.
+
+### Limites et décisions à valider
+
+- Les invitations ne sont pas envoyées par e-mail par l'application (pas de
+  SMTP applicatif) : le propriétaire partage le lien lui-même, conformément
+  au principe « pas d'envoi automatisé ».
+- Le changement de métier n'a pas encore d'effet sur des commandes
+  existantes (il n'y en a pas encore) ; la Phase 5 figera la version du
+  profil dans chaque commande.
+- Les pages Catalogue, Commandes, etc. restent des états vides jusqu'à leurs
+  phases.
+
+### Prochaine phase
+
+**Phase 4 — Clients et catalogue** : CRUD clients (téléphone E.164, notes
+privées, consentement marketing), catalogue (prix fixe / à partir de / sur
+devis, archivage), recherche, droits par rôle et audit.

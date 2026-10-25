@@ -5,16 +5,29 @@ import { ChevronRight } from "lucide-react";
 import { MORE_NAV } from "@/components/dashboard/navigation";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
+import { getBusinessContext } from "@/features/businesses/active-business";
 
 export const metadata: Metadata = { title: "Plus" };
 
-export default function MorePage() {
+const MODULE_BY_HREF: Record<string, "website" | "quotes"> = {
+  "/dashboard/website": "website",
+  "/dashboard/quotes": "quotes",
+};
+
+export default async function MorePage() {
+  const { modules } = await getBusinessContext();
+  // Les modules facultatifs désactivés n'encombrent pas la liste.
+  const items = MORE_NAV.filter((item) => {
+    const moduleKey = MODULE_BY_HREF[item.href];
+    return !moduleKey || modules.has(moduleKey);
+  });
+
   return (
     <>
       <PageHeader title="Plus" />
       <nav aria-label="Autres espaces">
         <ul className="divide-y rounded-xl border bg-card">
-          {MORE_NAV.map(({ href, label, hint, icon: Icon }) => (
+          {items.map(({ href, label, hint, icon: Icon }) => (
             <li key={href}>
               <Link
                 href={href}

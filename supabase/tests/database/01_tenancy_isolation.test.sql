@@ -47,7 +47,7 @@ order by relname;
 set local role anon;
 select throws_ok('select * from public.businesses', '42501', null, 'anon ne lit pas les entreprises');
 select throws_ok('select * from public.business_members', '42501', null, 'anon ne lit pas les membres');
-select throws_ok($$select public.create_business('Pirate')$$, '42501', null, 'anon ne crée pas d''entreprise');
+select throws_ok($$select public.create_business('Pirate', 'generic')$$, '42501', null, 'anon ne crée pas d''entreprise');
 reset role;
 
 -- 3. Alice (propriétaire A) ne voit que A ------------------------------------------

@@ -1,6 +1,8 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { PENDING_INVITATION_COOKIE } from "@/features/businesses/invitation-cookie";
+import { invitationTokenSchema } from "@/features/businesses/schemas";
 import { createClient } from "@/lib/supabase/server";
 
 const ALLOWED_TYPES: EmailOtpType[] = ["email", "signup", "recovery"];
@@ -20,7 +22,16 @@ export async function GET(request: NextRequest) {
       token_hash: tokenHash,
     });
     if (!error) {
-      const target = type === "recovery" ? "/update-password" : "/onboarding";
+      if (type === "recovery") {
+        return NextResponse.redirect(new URL("/update-password", request.url));
+      }
+      // Inscription faite depuis une invitation : retour à l'invitation.
+      const pending = invitationTokenSchema.safeParse(
+        request.cookies.get(PENDING_INVITATION_COOKIE)?.value,
+      );
+      const target = pending.success
+        ? `/invitation/${pending.data}`
+        : "/onboarding";
       return NextResponse.redirect(new URL(target, request.url));
     }
   }

@@ -53,16 +53,17 @@ dans Mailpit : http://127.0.0.1:54324.
 
 ## Scripts de validation
 
-| Commande               | Rôle                                             |
-| ---------------------- | ------------------------------------------------ |
-| `npm run lint`         | ESLint (règles Next.js + TypeScript)             |
-| `npm run typecheck`    | Génération des types de routes puis `tsc`        |
-| `npm run test`         | Tests unitaires Vitest (`tests/unit`)            |
-| `npm run format:check` | Vérification Prettier (`npm run format` corrige) |
-| `npm run test:db`      | Tests pgTAP (RLS, isolation entre entreprises)   |
-| `npm run build`        | Build de production Next.js                      |
-| `npm run test:e2e`     | Playwright, profils mobile 360 px et bureau      |
-| `npm run check`        | Enchaîne toutes les vérifications ci-dessus      |
+| Commande                   | Rôle                                             |
+| -------------------------- | ------------------------------------------------ |
+| `npm run lint`             | ESLint (règles Next.js + TypeScript)             |
+| `npm run typecheck`        | Génération des types de routes puis `tsc`        |
+| `npm run test`             | Tests unitaires Vitest (`tests/unit`)            |
+| `npm run format:check`     | Vérification Prettier (`npm run format` corrige) |
+| `npm run test:db`          | Tests pgTAP (RLS, isolation entre entreprises)   |
+| `npm run test:integration` | Vérifs contre Supabase local (profils métiers)   |
+| `npm run build`            | Build de production Next.js                      |
+| `npm run test:e2e`         | Playwright, profils mobile 360 px et bureau      |
+| `npm run check`            | Enchaîne toutes les vérifications ci-dessus      |
 
 `npm run test:db` et `npm run test:e2e` nécessitent Supabase local démarré
 (`npm run db:start`). `npm run test:e2e` construit puis démarre l'application

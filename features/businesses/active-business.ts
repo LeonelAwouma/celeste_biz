@@ -4,6 +4,16 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import {
+  resolveModules,
+  sanitizeModuleOverrides,
+  type ModuleOverrides,
+} from "@/features/professions/modules";
+import { getProfessionTemplate } from "@/features/professions/registry";
+import type {
+  ModuleKey,
+  ProfessionTemplate,
+} from "@/features/professions/schema";
 import { requireUser } from "@/lib/auth/session";
 import { isBusinessRole, type BusinessRole } from "@/lib/permissions/roles";
 import { createClient } from "@/lib/supabase/server";
@@ -16,7 +26,17 @@ export type BusinessMembership = {
   name: string;
   slug: string;
   professionKey: string;
+  professionVersion: number;
+  city: string | null;
+  whatsappPhone: string | null;
   role: BusinessRole;
+};
+
+export type BusinessContext = {
+  business: BusinessMembership;
+  template: ProfessionTemplate;
+  moduleOverrides: ModuleOverrides;
+  modules: Set<ModuleKey>;
 };
 
 /** Entreprises dont l'utilisateur est membre actif (filtrées par la RLS). */
@@ -26,7 +46,9 @@ export const listMyBusinesses = cache(
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("business_members")
-      .select("role, businesses!inner(id, name, slug, profession_key)")
+      .select(
+        "role, businesses!inner(id, name, slug, profession_key, profession_version, city, whatsapp_phone_e164)",
+      )
       .eq("user_id", user.id)
       .eq("status", "active")
       .order("created_at", { ascending: true });
@@ -44,6 +66,9 @@ export const listMyBusinesses = cache(
           name: business.name,
           slug: business.slug,
           professionKey: business.profession_key,
+          professionVersion: business.profession_version,
+          city: business.city,
+          whatsappPhone: business.whatsapp_phone_e164,
           role: row.role,
         },
       ];
@@ -72,3 +97,26 @@ export async function requireActiveBusiness(): Promise<BusinessMembership> {
   if (!business) redirect("/onboarding");
   return business;
 }
+
+/** Entreprise active + profil métier + modules actifs. */
+export const getBusinessContext = cache(async (): Promise<BusinessContext> => {
+  const business = await requireActiveBusiness();
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("business_settings")
+    .select("modules")
+    .eq("business_id", business.id)
+    .maybeSingle();
+
+  const template = getProfessionTemplate(
+    business.professionKey,
+    business.professionVersion,
+  );
+  const moduleOverrides = sanitizeModuleOverrides(data?.modules);
+  return {
+    business,
+    template,
+    moduleOverrides,
+    modules: resolveModules(template, moduleOverrides),
+  };
+});

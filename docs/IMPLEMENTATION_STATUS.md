@@ -12,8 +12,8 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | 2     | Supabase Auth + isolement multi-entreprises      | ✅ terminée |
 | 3     | Onboarding et profils métiers                    | ✅ terminée |
 | 4     | Clients et catalogue                             | ✅ terminée |
-| 5     | Commandes et acomptes manuels                    | ⏭ suivante  |
-| 6     | Devis + facturation (émission sous feature flag) | à faire     |
+| 5     | Commandes et acomptes manuels                    | ✅ terminée |
+| 6     | Devis + facturation (émission sous feature flag) | ⏭ suivante  |
 | 7     | Tableau « Aujourd'hui »                          | à faire     |
 | 8     | Portail client privé (**premier pilote**)        | à faire     |
 | 9     | Site web métier optionnel                        | à faire     |
@@ -381,3 +381,83 @@ devis, archivage), recherche, droits par rôle et audit.
 issues du catalogue, statuts et transitions contrôlées, numéro `CMD` unique
 par entreprise, acomptes manuels et solde exacts, vues « En cours » et
 « En retard ».
+
+---
+
+## Phase 5 — Commandes et acomptes manuels
+
+**Date :** 2026-10-26 · décisions : `docs/adr/0006-orders-manual-payments.md`
+
+### Réalisé
+
+- Migration `20261026000001_orders_payments.sql` : `orders`, `order_items`
+  (copie figée du catalogue, montants en colonnes générées),
+  `order_events` (journal append-only), `payments`, table de référence des
+  transitions, compteur `CMD-AAAA-NNNN`, fonctions transactionnelles et
+  `list_orders` (filtres, recherche, pagination par clé).
+- Nouvelle commande : client existant (recherche) ou fiche minimale,
+  lignes depuis le catalogue ou libres (quantité décimale, remise, taxe),
+  total estimé en direct, échéance date + heure, champs du métier
+  (type de vêtement, mesures si module actif, date d'événement…),
+  responsable, notes internes, acompte facultatif, option brouillon.
+- Liste : En cours, En retard, À encaisser, Brouillons, Terminées ;
+  recherche par numéro ou client ; solde et retard visibles.
+- Fiche : montants (total, encaissé, reste), actions d'état selon le rôle,
+  annulation avec motif, informations métier, lignes, encaissements
+  (ajout, annulation avec motif), historique horodaté avec l'auteur.
+- Modification : version contrôlée ; lignes figées après confirmation ;
+  étape de réalisation pendant la confection/préparation.
+- Fiche client : commandes récentes, solde dû, « Nouvelle commande ».
+- Données de démonstration : 3 commandes chez Alice (en cours avec
+  acompte, prête en retard, clôturée soldée), 1 chez Bob.
+
+### Tests exécutés et résultats
+
+| Commande                   | Résultat                                             |
+| -------------------------- | ---------------------------------------------------- |
+| `npm run lint`             | ✅                                                   |
+| `npm run typecheck`        | ✅                                                   |
+| `npm run test`             | ✅ 13 fichiers, 139 tests                            |
+| `npm run format:check`     | ✅                                                   |
+| `npm run test:db`          | ✅ pgTAP 156/156 (4 fichiers)                        |
+| `npm run test:integration` | ✅ profils métiers + transitions identiques en base  |
+| `npm run build`            | ✅                                                   |
+| `npm run test:e2e`         | ✅ 72 tests (5 ignorés car propres à l'autre profil) |
+
+### Critères d'acceptation (cahier §11, phase 5)
+
+- Transitions invalides bloquées : pgTAP (`confirmée → livrée` refusée,
+  rôle vérifié par transition, version périmée refusée).
+- Calculs exacts : exemple avec quantité décimale, remise et taxe vérifié
+  au centime en SQL et dans l'aperçu TypeScript.
+- Doubles soumissions : même commande et même encaissement renvoyés, aucun
+  doublon (pgTAP) ; bouton désactivé pendant l'envoi.
+- `CMD` unique par entreprise : contrainte `unique (business_id, code)`,
+  compteur atomique, numérotation propre à chaque entreprise (pgTAP).
+- Aucun montant en virgule flottante : `numeric` en base, chaînes
+  décimales et BigInt côté TypeScript.
+
+### Sécurité / tenancy vérifiées
+
+- pgTAP : aucune écriture directe ; commandes, lignes et listes d'une autre
+  entreprise invisibles ; pas de client ni d'article d'une autre entreprise
+  dans une commande ; responsable obligatoirement membre ; employé sans
+  annulation de commande ni d'encaissement ; lecteur en lecture seule ;
+  encaissement jamais supprimé ; pas d'encaissement au-delà du solde ni
+  daté dans le futur ; commande clôturée non modifiable.
+- E2E : commande d'une autre entreprise introuvable par URL.
+
+### Limites et décisions à valider
+
+- Le fuseau d'affichage est Africa/Douala (valeur par défaut des
+  entreprises ; pas encore modifiable dans les paramètres).
+- Fichiers privés attachés à une commande : non inclus (à confirmer avec le
+  pilote ; le stockage privé par entreprise existe déjà pour le catalogue).
+- Vue Kanban : non incluse, liste compacte filtrée à la place (§5.5).
+- Remboursements : prévus comme opérations séparées (phases 6 et 13).
+
+### Prochaine phase
+
+**Phase 6 — Devis + module documentaire** : brouillons de devis, PDF,
+acceptation, conversion en commande, factures en brouillon, reçus manuels
+clairement marqués ; émission définitive derrière feature flag.

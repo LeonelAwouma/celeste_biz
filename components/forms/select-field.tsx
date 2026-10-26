@@ -17,14 +17,14 @@ export function SelectField({
 }: SelectFieldProps) {
   const errorId = errors?.length ? `${id}-error` : undefined;
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex min-w-0 flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
       <select
         id={id}
         name={name}
         aria-invalid={errors?.length ? true : undefined}
         aria-describedby={errorId}
-        className="min-h-11 rounded-md border border-input bg-card px-3 text-base disabled:opacity-50"
+        className="min-h-11 w-full min-w-0 rounded-md border border-input bg-card px-3 text-base disabled:opacity-50"
         {...props}
       >
         {options.map((option) => (

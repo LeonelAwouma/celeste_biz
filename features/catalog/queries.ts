@@ -46,7 +46,7 @@ async function withImageUrls(items: CatalogItem[]): Promise<CatalogItem[]> {
 /** Catalogue de l'entreprise (quelques centaines d'articles au plus). */
 export async function listCatalogItems(
   businessId: string,
-  options: { archived?: boolean; query?: string } = {},
+  options: { archived?: boolean; query?: string; withImages?: boolean } = {},
 ): Promise<CatalogItem[]> {
   const supabase = await createClient();
   let request = supabase
@@ -71,7 +71,7 @@ export async function listCatalogItems(
       item.name.toLowerCase().includes(query) ||
       item.category?.toLowerCase().includes(query),
   );
-  return withImageUrls(items);
+  return options.withImages === false ? items : withImageUrls(items);
 }
 
 export async function getCatalogItem(

@@ -4,6 +4,11 @@ const DASHBOARD_PAGES = [
   ["/dashboard/today", "Aujourd'hui"],
   ["/dashboard/orders", "Commandes"],
   ["/dashboard/orders/new", "Nouvelle commande"],
+  ["/dashboard/orders/0da00000-0000-4000-8000-000000000001", /^CMD-/],
+  [
+    "/dashboard/orders/0da00000-0000-4000-8000-000000000001/edit",
+    /^Modifier CMD-/,
+  ],
   ["/dashboard/customers", "Clients"],
   ["/dashboard/invoices", "Factures"],
   ["/dashboard/catalog", "Catalogue"],

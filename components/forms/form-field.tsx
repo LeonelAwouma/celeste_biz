@@ -20,7 +20,7 @@ export function FormField({
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = errors?.length ? `${id}-error` : undefined;
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex min-w-0 flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
       <Input
         id={id}

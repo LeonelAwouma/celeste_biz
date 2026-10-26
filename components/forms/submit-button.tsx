@@ -13,9 +13,15 @@ export function SubmitButton({
   children,
   pendingLabel = "Envoi en cours…",
   disabled,
+  pending: pendingOverride,
   ...props
-}: React.ComponentProps<typeof Button> & { pendingLabel?: string }) {
-  const { pending } = useFormStatus();
+}: React.ComponentProps<typeof Button> & {
+  pendingLabel?: string;
+  /** Envoi déclenché à la main (startTransition) : état fourni par l'appelant. */
+  pending?: boolean;
+}) {
+  const status = useFormStatus();
+  const pending = pendingOverride ?? status.pending;
   return (
     <Button
       type="submit"

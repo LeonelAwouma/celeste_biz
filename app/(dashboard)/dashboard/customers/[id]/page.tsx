@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ClipboardList } from "lucide-react";
+import { ArrowLeft, ChevronRight, ClipboardList, Plus } from "lucide-react";
 
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CustomerForm } from "@/components/customers/customer-form";
 import { EmptyState } from "@/components/feedback/empty-state";
 import { ConfirmActionForm } from "@/components/forms/confirm-action-form";
-import { requireActiveBusiness } from "@/features/businesses/active-business";
+import { StatusBadge } from "@/components/orders/status-badge";
+import { Button } from "@/components/ui/button";
+import { getBusinessContext } from "@/features/businesses/active-business";
 import { setCustomerArchived } from "@/features/customers/actions";
 import { getCustomer } from "@/features/customers/queries";
+import { getCustomerBalance, listOrders } from "@/features/orders/queries";
+import { formatXaf } from "@/lib/monetary/xaf";
 import { formatPhone } from "@/lib/phone";
 import { can } from "@/lib/permissions/roles";
 
@@ -25,9 +29,17 @@ export default async function CustomerPage({
   searchParams,
 }: PageProps<"/dashboard/customers/[id]">) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
-  const business = await requireActiveBusiness();
+  const { business, template } = await getBusinessContext();
   const customer = await getCustomer(business.id, id);
   if (!customer) notFound();
+  const [{ orders }, balance] = await Promise.all([
+    listOrders(business.id, {
+      filter: "all",
+      customerId: customer.id,
+      limit: 10,
+    }),
+    getCustomerBalance(business.id, customer.id),
+  ]);
 
   const canWrite =
     can(business.role, "customers.write") && !customer.archived_at;
@@ -62,15 +74,73 @@ export default async function CustomerPage({
       ) : null}
 
       <div className="flex flex-col gap-6">
-        <section aria-labelledby="historique">
-          <h2 id="historique" className="mb-2 text-lg font-semibold">
-            Historique
-          </h2>
-          <EmptyState
-            icon={ClipboardList}
-            title="Aucune commande pour l'instant"
-            description="Les commandes, devis, paiements et le solde de ce client apparaîtront ici."
-          />
+        <section aria-labelledby="historique" className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="historique" className="text-lg font-semibold">
+              Commandes
+            </h2>
+            {can(business.role, "orders.write") && !customer.archived_at ? (
+              <Button asChild size="sm">
+                <Link href={`/dashboard/orders/new?client=${customer.id}`}>
+                  <Plus aria-hidden="true" />
+                  Nouvelle commande
+                </Link>
+              </Button>
+            ) : null}
+          </div>
+          {Number(balance.balance) > 0 ? (
+            <p className="rounded-md bg-warning px-3 py-2 text-sm text-warning-foreground">
+              Reste à payer sur ses commandes :{" "}
+              <strong>{formatXaf(balance.balance)}</strong>
+            </p>
+          ) : null}
+          {orders.length === 0 ? (
+            <EmptyState
+              icon={ClipboardList}
+              title="Aucune commande pour l'instant"
+              description="Les commandes, paiements et le solde de ce client apparaîtront ici."
+            />
+          ) : (
+            <ul
+              className="divide-y rounded-xl border bg-card"
+              aria-label="Commandes du client"
+            >
+              {orders.map((order) => (
+                <li key={order.id}>
+                  <Link
+                    href={`/dashboard/orders/${order.id}`}
+                    className="flex min-h-14 items-center gap-3 px-4 py-2 hover:bg-accent"
+                  >
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="flex items-center gap-2 font-medium">
+                        {order.code}
+                        <StatusBadge
+                          status={order.status}
+                          template={template}
+                        />
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {formatXaf(order.total)}
+                        {Number(order.balance) > 0 &&
+                        order.status !== "cancelled"
+                          ? ` · reste ${formatXaf(order.balance)}`
+                          : ""}
+                      </span>
+                    </span>
+                    <ChevronRight
+                      aria-hidden="true"
+                      className="size-5 shrink-0 text-muted-foreground"
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          {balance.count > orders.length ? (
+            <p className="text-sm text-muted-foreground">
+              {orders.length} commandes les plus récentes sur {balance.count}.
+            </p>
+          ) : null}
         </section>
 
         <section aria-labelledby="informations">

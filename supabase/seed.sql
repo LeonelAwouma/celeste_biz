@@ -80,3 +80,59 @@ values
    'service', 'Tenue de mariage', 'Femme', 'quote', null, null, 2),
   ('cb100000-0000-4000-8000-000000000001', 'bbbbbbbb-0000-4000-8000-000000000001',
    'product', 'Gâteau d''anniversaire', 'Pâtisserie', 'from', 15000, 'gâteau', 1);
+
+-- Commandes fictives (dates relatives à la réinitialisation de la base).
+insert into private.order_counters (business_id, year, last_value)
+values
+  ('aaaaaaaa-0000-4000-8000-000000000001', extract(year from now() at time zone 'Africa/Douala')::int, 3),
+  ('bbbbbbbb-0000-4000-8000-000000000001', extract(year from now() at time zone 'Africa/Douala')::int, 1);
+
+insert into public.orders (id, business_id, customer_id, code, status, profession_key, profession_version,
+  details, production_step, due_at, assignee_id, notes, created_by, created_at, closed_at)
+values
+  ('0da00000-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001',
+   'c1a00000-0000-4000-8000-000000000001',
+   format('CMD-%s-0001', extract(year from now() at time zone 'Africa/Douala')), 'in_progress', 'couture', 1,
+   '{"garment_type": "robe", "fabric_source": "client", "measurements": {"tour_poitrine": 92, "tour_taille": 74, "tour_hanches": 100}, "style_notes": "Robe longue en wax, manches bouffantes."}',
+   'assemblage', now() + interval '2 days', 'a2222222-2222-4222-8222-222222222222',
+   'Tissu déposé le lundi.', 'a1111111-1111-4111-8111-111111111111', now() - interval '5 days', null),
+  ('0da00000-0000-4000-8000-000000000002', 'aaaaaaaa-0000-4000-8000-000000000001',
+   'c1a00000-0000-4000-8000-000000000002',
+   format('CMD-%s-0002', extract(year from now() at time zone 'Africa/Douala')), 'ready', 'couture', 1,
+   '{"garment_type": "retouche"}', null, now() - interval '1 day', null, null,
+   'a1111111-1111-4111-8111-111111111111', now() - interval '3 days', null),
+  ('0da00000-0000-4000-8000-000000000003', 'aaaaaaaa-0000-4000-8000-000000000001',
+   'c1a00000-0000-4000-8000-000000000001',
+   format('CMD-%s-0003', extract(year from now() at time zone 'Africa/Douala')), 'closed', 'couture', 1,
+   '{"garment_type": "ensemble"}', null, now() - interval '10 days', null, null,
+   'a1111111-1111-4111-8111-111111111111', now() - interval '20 days', now() - interval '9 days'),
+  ('0db00000-0000-4000-8000-000000000001', 'bbbbbbbb-0000-4000-8000-000000000001',
+   'c1b00000-0000-4000-8000-000000000001',
+   format('CMD-%s-0001', extract(year from now() at time zone 'Africa/Douala')), 'confirmed', 'catering', 1,
+   '{"event_date": "2026-12-12T15:00", "delivery_mode": "livraison", "portions": 40}', null,
+   now() + interval '7 days', null, null, 'b1111111-1111-4111-8111-111111111111', now() - interval '1 day', null);
+
+insert into public.order_items (business_id, order_id, position, catalog_item_id, name, unit, quantity, unit_price)
+values
+  ('aaaaaaaa-0000-4000-8000-000000000001', '0da00000-0000-4000-8000-000000000001', 0,
+   'ca100000-0000-4000-8000-000000000001', 'Robe sur mesure', 'pièce', 1, 35000),
+  ('aaaaaaaa-0000-4000-8000-000000000001', '0da00000-0000-4000-8000-000000000002', 0,
+   'ca100000-0000-4000-8000-000000000002', 'Retouche simple', 'pièce', 2, 2500),
+  ('aaaaaaaa-0000-4000-8000-000000000001', '0da00000-0000-4000-8000-000000000003', 0,
+   null, 'Ensemble pagne', 'pièce', 1, 25000),
+  ('bbbbbbbb-0000-4000-8000-000000000001', '0db00000-0000-4000-8000-000000000001', 0,
+   'cb100000-0000-4000-8000-000000000001', 'Gâteau d''anniversaire', 'gâteau', 2, 18000);
+
+insert into public.payments (id, business_id, order_id, method, amount, paid_on, reference, recorded_by, created_at)
+values
+  ('0ea00000-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001',
+   '0da00000-0000-4000-8000-000000000001', 'mobile_money', 15000, (now() - interval '5 days')::date,
+   'MP241020.1532.A12345', 'a1111111-1111-4111-8111-111111111111', now() - interval '5 days'),
+  ('0ea00000-0000-4000-8000-000000000002', 'aaaaaaaa-0000-4000-8000-000000000001',
+   '0da00000-0000-4000-8000-000000000003', 'cash', 25000, (now() - interval '9 days')::date,
+   null, 'a1111111-1111-4111-8111-111111111111', now() - interval '9 days');
+
+insert into public.order_events (business_id, order_id, actor_id, type, to_status, created_at)
+select business_id, id, created_by, 'created', 'confirmed', created_at from public.orders;
+
+select private.recompute_order(id) from public.orders;

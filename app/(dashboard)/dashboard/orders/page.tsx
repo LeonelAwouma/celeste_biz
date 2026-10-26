@@ -24,6 +24,7 @@ export const metadata: Metadata = { title: "Commandes" };
 
 const FILTERS: { key: OrderFilter; label: string }[] = [
   { key: "active", label: "En cours" },
+  { key: "soon", label: "Sous 48 h" },
   { key: "late", label: "En retard" },
   { key: "to_collect", label: "À encaisser" },
   { key: "draft", label: "Brouillons" },
@@ -39,6 +40,15 @@ const EMPTY: Record<OrderFilter, { title: string; description: string }> = {
   late: {
     title: "Aucune commande en retard",
     description: "Toutes les échéances sont tenues.",
+  },
+  soon: {
+    title: "Rien à remettre sous 48 h",
+    description:
+      "Aucune commande en cours n'a d'échéance dans les 48 prochaines heures.",
+  },
+  unassigned: {
+    title: "Toutes les commandes ont un responsable",
+    description: "Aucune commande en cours sans membre de l'équipe désigné.",
   },
   to_collect: {
     title: "Rien à encaisser",
@@ -133,7 +143,12 @@ export default async function OrdersPage({
           aria-label="Filtre des commandes"
           className="-mx-4 flex gap-1 overflow-x-auto px-4"
         >
-          {FILTERS.map((entry) => (
+          {[
+            ...FILTERS,
+            ...(filter === "unassigned"
+              ? [{ key: "unassigned" as const, label: "Sans responsable" }]
+              : []),
+          ].map((entry) => (
             <Link
               key={entry.key}
               href={href({ filtre: entry.key, apres: undefined })}

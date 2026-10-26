@@ -147,7 +147,7 @@ values
    'c1a00000-0000-4000-8000-000000000002',
    format('DEV-%s-0001', extract(year from now() at time zone 'Africa/Douala')), 'sent',
    (now() at time zone 'Africa/Douala')::date + 10, 'Acompte de 50 % à la commande. Délai : 10 jours.',
-   now() - interval '2 days', 'a1111111-1111-4111-8111-111111111111', now() - interval '2 days');
+   now() - interval '6 days', 'a1111111-1111-4111-8111-111111111111', now() - interval '6 days');
 
 insert into public.quote_items (business_id, quote_id, position, catalog_item_id, name, unit, quantity, unit_price)
 values

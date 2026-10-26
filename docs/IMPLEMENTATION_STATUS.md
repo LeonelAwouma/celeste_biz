@@ -14,8 +14,8 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | 4     | Clients et catalogue                             | ✅ terminée |
 | 5     | Commandes et acomptes manuels                    | ✅ terminée |
 | 6     | Devis + facturation (émission sous feature flag) | ✅ terminée |
-| 7     | Tableau « Aujourd'hui »                          | ⏭ suivante  |
-| 8     | Portail client privé (**premier pilote**)        | à faire     |
+| 7     | Tableau « Aujourd'hui »                          | ✅ terminée |
+| 8     | Portail client privé (**premier pilote**)        | ⏭ suivante  |
 | 9     | Site web métier optionnel                        | à faire     |
 | 10    | WhatsApp sans automatisation, liens de campagne  | à faire     |
 | 11    | Exports, supervision, qualité de production      | à faire     |
@@ -564,3 +564,70 @@ no-store`, bucket privé, lecture par les seuls membres ; 404 pour une
 
 **Phase 7 — Tableau « Aujourd'hui »** : priorités du jour (à remettre, en
 retard, à encaisser, devis sans réponse), actions rapides.
+
+---
+
+## Phase 7 — Tableau « Aujourd'hui » et alertes actionnables
+
+**Date :** 2026-10-26 · décisions : `docs/adr/0008-today-dashboard.md`
+
+### Réalisé
+
+- Migration `20261026000003_dashboard.sql` : fonction `dashboard_summary`
+  (une seule requête, réservée aux membres, bornée), index partiels sur les
+  commandes ouvertes et les devis envoyés, filtres `soon` et `unassigned`
+  ajoutés à `list_orders`.
+- Écran « Aujourd'hui » : section « À faire » avec des alertes
+  déterministes (en retard, à remettre sous 48 h, soldes en attente, devis
+  envoyés sans réponse depuis 5 jours, commandes sans responsable si
+  l'équipe compte plusieurs personnes). Chaque alerte affiche sa règle
+  (dates, états), les 5 premiers dossiers avec leur échéance ou leur solde,
+  et un lien vers la liste filtrée correspondante.
+- « En chiffres » : commandes en cours, soldes à encaisser, encaissé sur
+  7 jours et sur le mois (déclarés), devis sans réponse ; aucune marge ni
+  bénéfice (coûts non saisis), mention explicite.
+- Liste des commandes : onglet « Sous 48 h », filtre « Sans responsable ».
+- « Premiers pas » reste affiché tant qu'aucune commande n'existe.
+- Données de démonstration : le devis envoyé date de 6 jours.
+
+### Tests exécutés et résultats
+
+| Commande                   | Résultat                                             |
+| -------------------------- | ---------------------------------------------------- |
+| `npm run lint`             | ✅                                                   |
+| `npm run typecheck`        | ✅                                                   |
+| `npm run test`             | ✅ 15 fichiers, 161 tests                            |
+| `npm run format:check`     | ✅                                                   |
+| `npm run test:db`          | ✅ pgTAP 228/228 (6 fichiers)                        |
+| `npm run test:integration` | ✅                                                   |
+| `npm run build`            | ✅                                                   |
+| `npm run test:e2e`         | ✅ 90 tests (5 ignorés car propres à l'autre profil) |
+
+### Critères d'acceptation (cahier §11, phase 7)
+
+- Alertes expliquées et associées aux vrais dossiers : pgTAP (dossier en
+  retard listé avec échéance et état, devis trop récent non signalé,
+  brouillon/annulée/livrée jamais en retard) et E2E (clic vers la commande,
+  « Tout voir » vers la liste filtrée).
+- Agrégats corrects : écarts mesurés en pgTAP après création de commandes
+  contrôlées (total des soldes au franc près, encaissement annulé exclu).
+- Aucune marge inventée : aucune clé de marge ou de bénéfice (pgTAP).
+- Performance : 5 000 commandes ouvertes, calcul en moins de 300 ms
+  (pgTAP ; ~18 ms mesurés en local).
+
+### Sécurité / tenancy vérifiées
+
+- Non-membre et anonyme refusés (42501) ; dossiers d'une autre entreprise
+  absents (pgTAP et E2E avec Bob).
+
+### Limites et décisions à valider
+
+- Seuils fixes (48 h, 5 jours) : réglables en paramètre SQL, pas encore
+  dans les paramètres de l'entreprise.
+- Pas de notifications ni de rappels envoyés au client (Phase 10, liens
+  `wa.me` uniquement).
+
+### Prochaine phase
+
+**Phase 8 — Portail client privé** (premier pilote) : lien de suivi à jeton
+haché, expiration et révocation, pièces partageables.

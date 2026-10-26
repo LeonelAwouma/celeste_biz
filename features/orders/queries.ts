@@ -10,7 +10,9 @@ import type { PaymentMethod, PaymentStatus } from "./status";
 
 export const ORDER_FILTERS = [
   "active",
+  "soon",
   "late",
+  "unassigned",
   "to_collect",
   "draft",
   "done",
@@ -107,7 +109,10 @@ export async function listOrders(
     nextCursor:
       rows.length > limit && last
         ? encodeCursor({
-            at: (filter === "late" ? last.due_at : last.created_at) ?? "",
+            at:
+              (filter === "late" || filter === "soon"
+                ? last.due_at
+                : last.created_at) ?? "",
             id: last.id,
           })
         : null,

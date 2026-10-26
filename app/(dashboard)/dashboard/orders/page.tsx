@@ -180,12 +180,14 @@ export default async function OrdersPage({
                   className="flex min-h-16 items-center gap-3 px-4 py-3 hover:bg-accent"
                 >
                   <span className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className="flex items-center gap-2">
-                      <span className="truncate font-medium">
-                        {order.customerName}
-                      </span>
-                      <StatusBadge status={order.status} template={template} />
+                    <span className="truncate font-medium">
+                      {order.customerName}
                     </span>
+                    <StatusBadge
+                      status={order.status}
+                      template={template}
+                      className="self-start"
+                    />
                     <span className="text-sm text-muted-foreground">
                       {order.code}
                       {order.dueAt ? (

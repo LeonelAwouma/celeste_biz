@@ -176,13 +176,19 @@ export default async function OrderPage({
         >
           <div className="rounded-xl border bg-card px-2 py-3">
             <p className="text-xs text-muted-foreground">Total</p>
-            <p className="font-semibold" data-testid="order-amount-total">
+            <p
+              className="text-sm font-semibold break-words sm:text-base"
+              data-testid="order-amount-total"
+            >
               {formatXaf(order.total)}
             </p>
           </div>
           <div className="rounded-xl border bg-card px-2 py-3">
             <p className="text-xs text-muted-foreground">Encaissé</p>
-            <p className="font-semibold" data-testid="order-amount-paid">
+            <p
+              className="text-sm font-semibold break-words sm:text-base"
+              data-testid="order-amount-paid"
+            >
               {formatXaf(order.paidTotal)}
             </p>
           </div>
@@ -195,7 +201,10 @@ export default async function OrderPage({
             )}
           >
             <p className="text-xs">Reste à payer</p>
-            <p className="font-semibold" data-testid="order-amount-balance">
+            <p
+              className="text-sm font-semibold break-words sm:text-base"
+              data-testid="order-amount-balance"
+            >
               {hasBalance ? formatXaf(order.balance) : "Soldée"}
             </p>
           </div>

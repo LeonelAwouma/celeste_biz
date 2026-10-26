@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -36,9 +37,25 @@ function SidebarLink({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-/** Barre latérale (écrans ≥ md). */
-export function SidebarNav() {
-  const pathname = usePathname();
+/**
+ * Le chemin n'est connu qu'à l'exécution sur les routes dynamiques
+ * (`/clients/[id]`) : la navigation est d'abord rendue sans onglet actif,
+ * puis complétée derrière une frontière Suspense.
+ */
+function withPathname(Nav: (props: { pathname: string }) => React.ReactNode) {
+  function NavWithPathname() {
+    return <Nav pathname={usePathname()} />;
+  }
+  return function NavBoundary() {
+    return (
+      <Suspense fallback={<Nav pathname="" />}>
+        <NavWithPathname />
+      </Suspense>
+    );
+  };
+}
+
+function SidebarNavItems({ pathname }: { pathname: string }) {
   return (
     <nav aria-label="Navigation principale" className="flex flex-col gap-1">
       {PRIMARY_NAV.map((item) => (
@@ -52,9 +69,7 @@ export function SidebarNav() {
   );
 }
 
-/** Barre d'onglets fixée en bas (mobile). */
-export function BottomTabNav() {
-  const pathname = usePathname();
+function BottomTabNavItems({ pathname }: { pathname: string }) {
   return (
     <nav
       aria-label="Navigation principale"
@@ -84,3 +99,9 @@ export function BottomTabNav() {
     </nav>
   );
 }
+
+/** Barre latérale (écrans ≥ md). */
+export const SidebarNav = withPathname(SidebarNavItems);
+
+/** Barre d'onglets fixée en bas (mobile). */
+export const BottomTabNav = withPathname(BottomTabNavItems);

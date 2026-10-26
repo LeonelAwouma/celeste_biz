@@ -11,8 +11,8 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | 1     | Fondations UX et structure de projet             | ✅ terminée |
 | 2     | Supabase Auth + isolement multi-entreprises      | ✅ terminée |
 | 3     | Onboarding et profils métiers                    | ✅ terminée |
-| 4     | Clients et catalogue                             | ⏭ suivante  |
-| 5     | Commandes et acomptes manuels                    | à faire     |
+| 4     | Clients et catalogue                             | ✅ terminée |
+| 5     | Commandes et acomptes manuels                    | ⏭ suivante  |
 | 6     | Devis + facturation (émission sous feature flag) | à faire     |
 | 7     | Tableau « Aujourd'hui »                          | à faire     |
 | 8     | Portail client privé (**premier pilote**)        | à faire     |
@@ -311,3 +311,73 @@ champs activés sans IA, invitation d'un employé, site toujours facultatif.
 **Phase 4 — Clients et catalogue** : CRUD clients (téléphone E.164, notes
 privées, consentement marketing), catalogue (prix fixe / à partir de / sur
 devis, archivage), recherche, droits par rôle et audit.
+
+---
+
+## Phase 4 — Clients et catalogue
+
+**Date :** 2026-10-25 · décisions : `docs/adr/0005-customers-catalog-money.md`
+
+### Réalisé
+
+- Migration `20261025000003_customers_catalog.sql` : tables `customers` et
+  `catalog_items`, privilèges par colonne, RLS, triggers de règles métier et
+  d'audit, RPC `search_customers`, bucket privé `catalog-images` et ses
+  politiques.
+- Clients : liste avec recherche (nom ou chiffres du numéro), onglets
+  Actifs / Archivés, « Voir la suite » (20 par page), bouton d'appel
+  direct, fiche avec historique (vide jusqu'à la Phase 5), création et
+  modification (téléphone normalisé, e-mail, notes internes, consentement
+  marketing horodaté), avertissement de doublon par numéro, archivage et
+  restauration avec confirmation.
+- Catalogue : liste groupée par catégorie avec vignette et prix, recherche,
+  archivés ; article avec type (service/produit), prix fixe / à partir de /
+  sur devis, unité, catégorie (suggestions), description, ordre, visibilité
+  interne ; photo réduite dans le navigateur puis vérifiée côté serveur.
+- Montants FCFA : saisie souple, stockage décimal exact, affichage
+  « 25 000 FCFA ».
+- Interface adaptée au rôle : l'employé ajoute et modifie des clients, mais
+  n'archive pas et consulte le catalogue en lecture seule.
+- Données de démonstration : 3 clients et 3 articles pour l'atelier
+  d'Alice, 1 client et 1 article pour Bob.
+- Correctif transverse : la navigation est rendue sans onglet actif puis
+  complétée derrière une frontière Suspense, condition pour les routes
+  dynamiques (`/clients/[id]`) avec `cacheComponents`.
+
+### Tests exécutés et résultats
+
+| Commande                   | Résultat                                             |
+| -------------------------- | ---------------------------------------------------- |
+| `npm run lint`             | ✅                                                   |
+| `npm run typecheck`        | ✅                                                   |
+| `npm run test`             | ✅ 12 fichiers, 121 tests                            |
+| `npm run format:check`     | ✅                                                   |
+| `npm run test:db`          | ✅ pgTAP 102/102 (3 fichiers)                        |
+| `npm run test:integration` | ✅                                                   |
+| `npm run build`            | ✅                                                   |
+| `npm run test:e2e`         | ✅ 62 tests (5 ignorés car propres à l'autre profil) |
+
+### Sécurité / tenancy vérifiées
+
+- pgTAP : clients et catalogue d'une autre entreprise ni lisibles, ni
+  modifiables, ni recherchables ; pas de déplacement vers une autre
+  entreprise ; pas de suppression ; employé sans archivage ni écriture au
+  catalogue ; lecteur sans écriture ; consentement horodaté par le serveur ;
+  audit sans contenu personnel ; jokers de recherche neutralisés ; bucket
+  privé ; photos d'une autre entreprise ni lisibles ni déposables.
+- E2E : faux fichier image refusé (contrôle de la signature), droits de
+  l'employé dans l'interface, pagination sur un compte neuf (insertion sous
+  RLS avec la session du propriétaire).
+
+### Limites et décisions à valider
+
+- Fusion de fiches clients reportée (nécessite commandes et paiements).
+- Import CSV de clients non prévu au MVP (à confirmer).
+- Historique client, solde et commandes : Phase 5.
+
+### Prochaine phase
+
+**Phase 5 — Commandes et acomptes manuels** : commande avec lignes figées
+issues du catalogue, statuts et transitions contrôlées, numéro `CMD` unique
+par entreprise, acomptes manuels et solde exacts, vues « En cours » et
+« En retard ».

@@ -22,6 +22,7 @@ const PERMISSIONS = {
   "exports.run": ["owner", "manager"],
   "catalog.write": ["owner", "manager"],
   "customers.write": ["owner", "manager", "staff"],
+  "customers.archive": ["owner", "manager"],
   "orders.write": ["owner", "manager", "staff"],
   "business.read": ["owner", "manager", "staff", "viewer"],
 } as const satisfies Record<string, readonly BusinessRole[]>;

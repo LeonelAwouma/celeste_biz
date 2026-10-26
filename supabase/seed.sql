@@ -57,3 +57,26 @@ insert into public.business_settings (business_id)
 values
   ('aaaaaaaa-0000-4000-8000-000000000001'),
   ('bbbbbbbb-0000-4000-8000-000000000001');
+
+-- Clients et catalogue fictifs
+insert into public.customers (id, business_id, name, phone_e164, notes, marketing_consent)
+values
+  ('c1a00000-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001',
+   'Mireille Ngo', '+237677000101', 'Préfère les essayages le samedi.', true),
+  ('c1a00000-0000-4000-8000-000000000002', 'aaaaaaaa-0000-4000-8000-000000000001',
+   'Paul Etoga', '+237699000102', null, false),
+  ('c1a00000-0000-4000-8000-000000000003', 'aaaaaaaa-0000-4000-8000-000000000001',
+   'Cliente de passage', null, null, false),
+  ('c1b00000-0000-4000-8000-000000000001', 'bbbbbbbb-0000-4000-8000-000000000001',
+   'Société Kamga', '+237655000201', 'Commandes mensuelles pour le personnel.', false);
+
+insert into public.catalog_items (id, business_id, kind, name, category, price_mode, price, unit, position)
+values
+  ('ca100000-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001',
+   'service', 'Robe sur mesure', 'Femme', 'from', 25000, 'pièce', 1),
+  ('ca100000-0000-4000-8000-000000000002', 'aaaaaaaa-0000-4000-8000-000000000001',
+   'service', 'Retouche simple', 'Retouches', 'fixed', 2500, 'pièce', 1),
+  ('ca100000-0000-4000-8000-000000000003', 'aaaaaaaa-0000-4000-8000-000000000001',
+   'service', 'Tenue de mariage', 'Femme', 'quote', null, null, 2),
+  ('cb100000-0000-4000-8000-000000000001', 'bbbbbbbb-0000-4000-8000-000000000001',
+   'product', 'Gâteau d''anniversaire', 'Pâtisserie', 'from', 15000, 'gâteau', 1);

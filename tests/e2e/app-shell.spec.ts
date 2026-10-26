@@ -130,8 +130,9 @@ test.describe("grand écran", () => {
     const sidebar = page.locator("aside nav");
     await expect(sidebar).toBeVisible();
     await expect(sidebar.getByRole("link")).toHaveCount(9);
-    await expect(
-      page.locator("nav.fixed").filter({ hasText: "Plus" }),
-    ).toBeHidden();
+    // La navigation est diffusée en flux : attendre la version finale.
+    const tabs = page.locator("nav.fixed").filter({ hasText: "Plus" });
+    await expect(tabs).toHaveCount(1);
+    await expect(tabs).toBeHidden();
   });
 });

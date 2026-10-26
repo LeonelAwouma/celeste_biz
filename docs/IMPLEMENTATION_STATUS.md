@@ -16,8 +16,8 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | 6     | Devis + facturation (émission sous feature flag) | ✅ terminée |
 | 7     | Tableau « Aujourd'hui »                          | ✅ terminée |
 | 8     | Portail client privé (**premier pilote**)        | ✅ terminée |
-| 9     | Site web métier optionnel                        | ⏭ suivante  |
-| 10    | WhatsApp sans automatisation, liens de campagne  | à faire     |
+| 9     | Site web métier optionnel                        | ✅ terminée |
+| 10    | WhatsApp sans automatisation, liens de campagne  | ⏭ suivante  |
 | 11    | Exports, supervision, qualité de production      | à faire     |
 | 12    | Pilotage terrain, optimisation réseau            | à faire     |
 | 13    | Paiements en ligne (feature flag)                | à faire     |
@@ -717,3 +717,88 @@ haché, expiration et révocation, pièces partageables.
 **Phase 9 — Site web métier optionnel** : modèles couture, traiteur et
 générique, éditeur simple, prévisualisation, publication explicite,
 `/sites/[slug]`, contact WhatsApp.
+
+---
+
+## Phase 9 — Site web métier facultatif
+
+**Date :** 2026-10-26 · décisions : `docs/adr/0010-optional-websites.md`
+
+### Réalisé
+
+- Migration `20261026000005_websites.sql` : table `websites` (un site par
+  entreprise : brouillon versionné, médias, instantané publié), fonctions
+  `create_website`, `save_website`, `set_website_media`, `publish_website`,
+  `unpublish_website` (propriétaire ou gestionnaire), `get_public_site` et
+  `is_public_site_asset` (anonymes), bucket privé `site-images`, lecture
+  anonyme du stockage limitée aux fichiers d'un instantané publié.
+- « Mon site » : « Créer mon site » ou « Plus tard », trois modèles
+  (atelier de couture, pâtisserie et traiteur, générique) qui fixent
+  l'ordre des sections et les intitulés ; éditeur simple (adresse,
+  accroche, présentation, horaires, quartier, couleur parmi 5 teintes
+  lisibles, prestations publiques du catalogue, prix affichés ou « Prix sur
+  demande ») ; logo, bannière et galerie de 8 photos réduites dans le
+  navigateur.
+- Aperçu du brouillon (même rendu que le site publié, réservé à l'équipe),
+  publication explicite avec confirmation, état « modifications non
+  publiées », retrait du site.
+- Page publique `/sites/<adresse>` : accroche, prestations et prix figés à
+  la publication, galerie, présentation, horaires, zone approximative,
+  bouton WhatsApp (`wa.me`, message prérempli selon le modèle). Rendu mis
+  en cache par adresse et invalidé à la publication, au retrait, au
+  changement de modules ou de métier.
+- Données de démonstration : site publié de « Délices de Bob ».
+
+### Tests exécutés et résultats
+
+| Commande                   | Résultat                                             |
+| -------------------------- | ---------------------------------------------------- |
+| `npm run lint`             | ✅                                                   |
+| `npm run typecheck`        | ✅                                                   |
+| `npm run test`             | ✅ 17 fichiers, 177 tests                            |
+| `npm run format:check`     | ✅                                                   |
+| `npm run test:db`          | ✅ pgTAP 295/295 (8 fichiers)                        |
+| `npm run test:integration` | ✅                                                   |
+| `npm run build`            | ✅                                                   |
+| `npm run test:e2e`         | ✅ 97 tests (6 ignorés car propres à l'autre profil) |
+
+### Critères d'acceptation (cahier §11, phase 9)
+
+- Aucune publication implicite : rien n'est public avant « Publier »
+  (pgTAP, E2E) ; un brouillon modifié, un prix de catalogue changé ou une
+  nouvelle adresse restent invisibles jusqu'à la publication suivante
+  (pgTAP, E2E) ; seule la version prévisualisée peut être publiée
+  (verrou de version).
+- Contenu d'une entreprise inaccessible depuis la mauvaise URL : une
+  adresse ne résout que l'instantané de son site ; adresse d'une autre
+  entreprise ou réservée refusée ; prestation d'une autre entreprise ou
+  privée refusée ; photo non publiée jamais servie (pgTAP, E2E).
+- Changement de prix catalogue sans effet sur les commandes passées (déjà
+  vrai depuis la Phase 5 : lignes copiées) ni sur le site publié (pgTAP).
+
+### Sécurité / tenancy vérifiées
+
+- Brouillons illisibles pour `anon` et pour les autres entreprises ;
+  employé et lecteur en lecture seule (pgTAP, E2E).
+- L'instantané publié ne contient que nom, ville, numéro WhatsApp de
+  l'entreprise, textes, photos et prestations choisies : aucune donnée
+  client ni note interne (pgTAP).
+- Module « Mon site » désactivé ou entreprise inactive : site hors ligne.
+
+### Limites et décisions à valider
+
+- Adresse `…/sites/<adresse>` uniquement ; sous-domaines et domaines
+  personnels après la mise en production (cahier §5.11).
+- Photos servies par `/sites/<adresse>/media/…` avec un cache d'une heure :
+  après un retrait, une photo déjà en cache navigateur ou CDN peut rester
+  visible jusqu'à une heure (la page, elle, est invalidée immédiatement).
+- Pas d'éditeur visuel libre ni de sections personnalisées : trois modèles
+  à sections fixes, par choix de simplicité.
+- Les photos non référencées sont supprimées après chaque envoi,
+  publication ou retrait.
+
+### Prochaine phase
+
+**Phase 10 — WhatsApp sans automatisation et traçabilité de campagne** :
+liens `wa.me` et messages préremplis, codes campagne, partage de devis et
+de suivi, métriques de clics si mesurables sans suivi abusif.

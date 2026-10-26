@@ -160,3 +160,21 @@ update public.quotes q
 set subtotal = t.s, total = t.s
 from (select quote_id, sum(line_net) as s from public.quote_items group by quote_id) t
 where q.id = t.quote_id;
+
+-- Site de démonstration publié (Phase 9) : Délices de Bob, modèle traiteur.
+update public.businesses set whatsapp_phone_e164 = '+237690000002'
+where id = 'bbbbbbbb-0000-4000-8000-000000000001';
+
+select set_config('request.jwt.claims',
+  '{"sub": "b1111111-1111-4111-8111-111111111111", "role": "authenticated"}', true);
+select public.create_website('bbbbbbbb-0000-4000-8000-000000000001', 'catering');
+select public.save_website('bbbbbbbb-0000-4000-8000-000000000001', 1, 'catering', 'delices-de-bob',
+  '{"headline": "Gâteaux et buffets pour vos événements à Yaoundé",
+    "about": "Pâtisserie artisanale : anniversaires, mariages, baptêmes. Commandez au moins 5 jours à l''avance.",
+    "hours": "Lundi au samedi : 8 h – 19 h\nDimanche : sur commande",
+    "area": "Bastos, Yaoundé",
+    "accent": "terracotta",
+    "show_prices": true,
+    "service_ids": ["cb100000-0000-4000-8000-000000000001"]}'::jsonb);
+select public.publish_website('bbbbbbbb-0000-4000-8000-000000000001', 2);
+select set_config('request.jwt.claims', '', true);

@@ -10,6 +10,7 @@ import {
   type FormState,
 } from "@/features/auth/schemas";
 import { getProfessionTemplate } from "@/features/professions/registry";
+import { invalidatePublishedSite } from "@/features/websites/cache";
 import { requireUser } from "@/lib/auth/session";
 import { getAppUrl } from "@/lib/env";
 import { can, type Permission } from "@/lib/permissions/roles";
@@ -169,6 +170,7 @@ export async function updateProfession(
   });
   if (error) return SAVE_FAILED;
 
+  await invalidatePublishedSite(business.id);
   revalidatePath("/dashboard", "layout");
   return {
     status: "success",
@@ -197,6 +199,7 @@ export async function updateModules(
     .select("business_id");
 
   if (error || !data?.length) return SAVE_FAILED;
+  await invalidatePublishedSite(business.id);
   revalidatePath("/dashboard", "layout");
   return { status: "success", message: "Modules enregistrés." };
 }

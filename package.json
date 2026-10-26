@@ -11,13 +11,14 @@
     "test": "vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run format:check && npm run test:db && npm run test:integration && npm run build && npm run test:e2e",
+    "check": "npm run check:secrets && npm run lint && npm run typecheck && npm run test && npm run format:check && npm run test:db && npm run test:integration && npm run build && npm run test:e2e",
     "test:e2e": "playwright test",
     "db:start": "supabase start -x studio,imgproxy,logflare,vector,realtime,edge-runtime,supavisor,postgres-meta",
     "db:reset": "supabase db reset",
     "test:db": "supabase test db",
     "professions:sql": "tsx scripts/print-profession-templates-sql.ts",
-    "test:integration": "vitest run --config vitest.integration.config.mts"
+    "test:integration": "vitest run --config vitest.integration.config.mts",
+    "check:secrets": "node scripts/check-secrets.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",

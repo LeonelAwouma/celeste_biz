@@ -1,0 +1,67 @@
+# Intégration continue : mêmes contrôles que `npm run check`, sans secret.
+# La base Supabase est démarrée localement dans le runner (Docker) avec des
+# données fictives ; aucun projet Supabase réel n'est utilisé.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: Lint, types, tests unitaires, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check:secrets
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run format:check
+      - run: npm run build
+
+  database-and-e2e:
+    name: Base de données, intégration, E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Démarrer Supabase local
+        run: npm run db:start
+      - name: Variables locales (valeurs de démonstration de Supabase CLI)
+        run: |
+          npx supabase status -o env \
+            --override-name api.url=NEXT_PUBLIC_SUPABASE_URL \
+            --override-name auth.publishable_key=NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
+            | grep '^NEXT_PUBLIC_' > .env.local
+          echo "NEXT_PUBLIC_APP_URL=http://localhost:3100" >> .env.local
+      - run: npm run test:db
+      - run: npm run test:integration
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          CI: "true"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 7

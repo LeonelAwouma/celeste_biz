@@ -11,6 +11,7 @@ import {
 } from "@/features/auth/schemas";
 import { requireActiveBusiness } from "@/features/businesses/active-business";
 import { can } from "@/lib/permissions/roles";
+import { QUOTA_MESSAGES, consumeQuota } from "@/lib/quotas";
 import { createClient } from "@/lib/supabase/server";
 
 import {
@@ -128,6 +129,9 @@ export async function uploadCatalogImage(
     return { status: "error", message: "Photo trop lourde (2 Mo maximum)." };
   }
 
+  if (!(await consumeQuota(business.id, "upload"))) {
+    return { status: "error", message: QUOTA_MESSAGES.upload };
+  }
   const bytes = new Uint8Array(await file.arrayBuffer());
   const type = detectImageType(bytes);
   if (!type) {

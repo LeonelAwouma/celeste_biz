@@ -6,6 +6,8 @@ type ErrorStateProps = {
   title?: string;
   description?: string;
   onRetry?: () => void;
+  /** Référence de l'erreur (digest) à transmettre au support. */
+  code?: string;
 };
 
 /** Message d'erreur utilisable : ce qui s'est passé et comment réessayer. */
@@ -13,6 +15,7 @@ export function ErrorState({
   title = "Un problème est survenu",
   description = "Vérifiez votre connexion Internet puis réessayez. Si le problème continue, contactez le support.",
   onRetry,
+  code,
 }: ErrorStateProps) {
   return (
     <section
@@ -22,6 +25,11 @@ export function ErrorState({
       <TriangleAlert aria-hidden="true" className="size-10 text-destructive" />
       <h2 className="text-lg font-semibold">{title}</h2>
       <p className="max-w-sm text-muted-foreground">{description}</p>
+      {code ? (
+        <p className="text-xs text-muted-foreground">
+          Code à transmettre au support : <code>{code}</code>
+        </p>
+      ) : null}
       {onRetry ? (
         <Button onClick={onRetry} className="mt-2">
           Réessayer

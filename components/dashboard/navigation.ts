@@ -1,6 +1,7 @@
 import {
   CalendarCheck,
   ClipboardList,
+  Download,
   Ellipsis,
   FileText,
   Globe,
@@ -42,6 +43,7 @@ export const SECONDARY_NAV: NavItem[] = [
   { href: "/dashboard/quotes", label: "Devis", icon: FileText },
   { href: "/dashboard/payments", label: "Encaissements", icon: Wallet },
   { href: "/dashboard/campaigns", label: "Campagnes", icon: Megaphone },
+  { href: "/dashboard/exports", label: "Exports", icon: Download },
 ];
 
 /** Barre du bas sur mobile : 4 raccourcis + « Plus » (lisible à 360 px). */

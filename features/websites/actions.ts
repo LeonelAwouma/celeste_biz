@@ -16,6 +16,7 @@ import {
   detectImageType,
 } from "@/features/catalog/schemas";
 import { can } from "@/lib/permissions/roles";
+import { QUOTA_MESSAGES, consumeQuota } from "@/lib/quotas";
 import { createClient } from "@/lib/supabase/server";
 
 import { getWebsite, siteCacheTag } from "./queries";
@@ -164,6 +165,9 @@ export async function uploadSiteImage(
   }
   if (file.size > IMAGE_MAX_BYTES) {
     return { status: "error", message: "Photo trop lourde (2 Mo maximum)." };
+  }
+  if (!(await consumeQuota(business.id, "upload"))) {
+    return { status: "error", message: QUOTA_MESSAGES.upload };
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
   const type = detectImageType(bytes);

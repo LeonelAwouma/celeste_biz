@@ -18,8 +18,8 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | 8     | Portail client privé (**premier pilote**)        | ✅ terminée |
 | 9     | Site web métier optionnel                        | ✅ terminée |
 | 10    | WhatsApp sans automatisation, liens de campagne  | ✅ terminée |
-| 11    | Exports, supervision, qualité de production      | ⏭ suivante  |
-| 12    | Pilotage terrain, optimisation réseau            | à faire     |
+| 11    | Exports, supervision, qualité de production      | ✅ terminée |
+| 12    | Pilotage terrain, optimisation réseau            | ⏭ suivante  |
 | 13    | Paiements en ligne (feature flag)                | à faire     |
 | 14    | WhatsApp Business Cloud API (feature flag)       | à faire     |
 | 15    | Offline navigateur (facultatif)                  | à faire     |
@@ -881,3 +881,80 @@ de suivi, métriques de clics si mesurables sans suivi abusif.
 **Phase 11 — Exports, supervision et qualité de production** : CSV
 sécurisés, supervision, audit, quotas, sauvegardes, configuration
 Vercel/Supabase, documentation utilisateurs.
+
+---
+
+## Phase 11 — Exports, supervision et qualité de production
+
+**Date :** 2026-10-26 · décisions : `docs/adr/0012-exports-observability.md`
+
+### Réalisé
+
+- Exports CSV (`/dashboard/exports`, propriétaire et gestionnaire) :
+  clients, catalogue, commandes, encaissements, devis, factures ; période
+  facultative ; UTF-8 avec BOM, séparateur « ; », virgule décimale ;
+  formules neutralisées ; 20 000 lignes au maximum ; filtre explicite par
+  entreprise en plus de la RLS ; export inscrit au journal et limité à
+  30 par 10 minutes.
+- Journal consultable (`/dashboard/audit`) : actions lisibles, auteur,
+  détails sans jeton ni contenu, pagination.
+- Quotas par entreprise (`consume_quota`) : envois de photos (catalogue et
+  site) limités à 60 par 10 minutes.
+- Supervision : `instrumentation.ts` journalise chaque erreur serveur en
+  JSON masqué (jetons, requêtes, JWT, clés, e-mails, téléphones) avec son
+  `digest`, affiché à l'utilisateur comme code à transmettre au support ;
+  sonde `GET /api/health` (application + base, sans donnée).
+- En-têtes de sécurité sur toutes les pages (`nosniff`, `DENY` en cadre,
+  `Referrer-Policy`, `Permissions-Policy`, HSTS).
+- `npm run check:secrets` (aucun `.env` ni clé versionnés), ajouté en tête
+  de `npm run check` ; CI GitHub Actions (`.github/workflows/ci.yml`) :
+  contrôles statiques, build, pgTAP, intégration et E2E sur Supabase local.
+- Documentation : `docs/DEPLOYMENT.md` (Vercel, Supabase, variables),
+  `docs/OPERATIONS.md` (supervision, sauvegardes et test de restauration,
+  quotas, coûts, incidents), `docs/GUIDE_UTILISATEUR.md`.
+
+### Tests exécutés et résultats
+
+| Commande                   | Résultat                                              |
+| -------------------------- | ----------------------------------------------------- |
+| `npm run check:secrets`    | ✅ aucun secret (289 fichiers)                        |
+| `npm run lint`             | ✅                                                    |
+| `npm run typecheck`        | ✅                                                    |
+| `npm run test`             | ✅ 19 fichiers, 192 tests                             |
+| `npm run format:check`     | ✅                                                    |
+| `npm run test:db`          | ✅ pgTAP 336/336 (10 fichiers)                        |
+| `npm run test:integration` | ✅                                                    |
+| `npm run build`            | ✅                                                    |
+| `npm run test:e2e`         | ✅ 113 tests (6 ignorés car propres à l'autre profil) |
+
+La CI GitHub Actions est ajoutée mais n'a pas encore tourné sur GitHub au
+moment de ce commit : son premier passage est à vérifier.
+
+### Critères d'acceptation (cahier §11, phase 11)
+
+- Exports limités à l'entreprise : E2E (aucune donnée de « Délices de
+  Bob » dans l'export d'Alice), employé refusé (403), pgTAP (rôles,
+  autre entreprise).
+- Anti-injection CSV : unitaires (= + - @ tabulation, retour chariot) et
+  E2E (client nommé `=HYPERLINK(…)` exporté avec apostrophe).
+- Erreurs instrumentées : `onRequestError` + masquage testé en unitaires ;
+  code d'erreur affiché à l'utilisateur.
+- Secrets absents : `check:secrets` dans `npm run check` et en CI.
+- Scripts CI verts : `npm run check` complet vert en local.
+
+### Limites et décisions à valider
+
+- Aucun service d'alerte externe (Sentry, etc.) n'est branché : compte à
+  choisir ; le point d'intégration est `instrumentation.ts`.
+- Sauvegardes : dépendent de l'offre Supabase choisie ; procédure et test
+  de restauration documentés, non exécutés faute de projet hébergé.
+- Console d'administration plateforme (cahier F16) et accès assisté du
+  support : non réalisés, à cadrer avec les offres (Phase 16).
+- Export complet à la fermeture du compte : possible type par type ;
+  archive unique (ZIP avec PDF) à prévoir.
+
+### Prochaine phase
+
+**Phase 12 — Pilotage terrain et optimisation réseau** : mesures d'usage
+respectueuses de la vie privée, collecte des retours, améliorations UX,
+évaluation de l'offline navigateur.

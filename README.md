@@ -8,6 +8,8 @@ factures et suivi client par lien privé. Le site web est **facultatif**.
 - Règles de travail : [`CLAUDE.md`](./CLAUDE.md)
 - Avancement des phases : [`docs/IMPLEMENTATION_STATUS.md`](./docs/IMPLEMENTATION_STATUS.md)
 - Décisions d'architecture : [`docs/adr/`](./docs/adr/)
+- Mise en production : [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) · exploitation : [`docs/OPERATIONS.md`](./docs/OPERATIONS.md)
+- Guide utilisateur : [`docs/GUIDE_UTILISATEUR.md`](./docs/GUIDE_UTILISATEUR.md)
 
 ## Stack
 
@@ -55,6 +57,7 @@ dans Mailpit : http://127.0.0.1:54324.
 
 | Commande                   | Rôle                                             |
 | -------------------------- | ------------------------------------------------ |
+| `npm run check:secrets`    | Aucun secret ni fichier `.env` versionné         |
 | `npm run lint`             | ESLint (règles Next.js + TypeScript)             |
 | `npm run typecheck`        | Génération des types de routes puis `tsc`        |
 | `npm run test`             | Tests unitaires Vitest (`tests/unit`)            |

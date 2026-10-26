@@ -20,6 +20,8 @@ const DASHBOARD_PAGES = [
   ["/dashboard/payments", "Encaissements"],
   ["/dashboard/campaigns", "Campagnes"],
   ["/dashboard/campaigns/new", "Nouvelle campagne"],
+  ["/dashboard/exports", "Exports"],
+  ["/dashboard/audit", "Journal"],
   ["/dashboard/more", "Plus"],
 ] as const;
 
@@ -146,7 +148,7 @@ test.describe("grand écran", () => {
     await page.goto("/dashboard/today");
     const sidebar = page.locator("aside nav");
     await expect(sidebar).toBeVisible();
-    await expect(sidebar.getByRole("link")).toHaveCount(10);
+    await expect(sidebar.getByRole("link")).toHaveCount(11);
     // La navigation est diffusée en flux : attendre la version finale.
     const tabs = page.locator("nav.fixed").filter({ hasText: "Plus" });
     await expect(tabs).toHaveCount(1);

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileDown } from "lucide-react";
+import { ArrowLeft, FileDown, MessageCircle } from "lucide-react";
 
 import { PageHeader } from "@/components/dashboard/page-header";
 import { LinesSummary } from "@/components/documents/lines-summary";
@@ -25,6 +25,7 @@ import { subtractAmounts, sumAmounts } from "@/lib/monetary/decimal";
 import { formatXaf } from "@/lib/monetary/xaf";
 import { can } from "@/lib/permissions/roles";
 import { formatDate, formatDateTime } from "@/lib/time";
+import { whatsappLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = { title: "Facture" };
 
@@ -96,6 +97,27 @@ export default async function InvoicePage({
             {draft ? "PDF du brouillon" : "PDF de la facture"}
           </a>
         </Button>
+        {!draft ? (
+          <div className="-mt-3 flex flex-col gap-1">
+            <Button asChild variant="outline">
+              <a
+                href={whatsappLink(
+                  invoice.customer.phone,
+                  `Bonjour ${invoice.customer.name}, voici votre facture ${invoice.number} de ${formatXaf(invoice.total)}. Je vous l'envoie en PDF juste après ce message.`,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle aria-hidden="true" />
+                Envoyer par WhatsApp
+              </a>
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              WhatsApp s&apos;ouvre avec un message prêt ; joignez-y le PDF
+              téléchargé.
+            </p>
+          </div>
+        ) : null}
 
         <section aria-labelledby="lignes" className="flex flex-col gap-2">
           <h2 id="lignes" className="text-lg font-semibold">

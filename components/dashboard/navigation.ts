@@ -4,6 +4,7 @@ import {
   Ellipsis,
   FileText,
   Globe,
+  Megaphone,
   Package,
   Receipt,
   Settings,
@@ -40,6 +41,7 @@ export const PRIMARY_NAV: NavItem[] = [
 export const SECONDARY_NAV: NavItem[] = [
   { href: "/dashboard/quotes", label: "Devis", icon: FileText },
   { href: "/dashboard/payments", label: "Encaissements", icon: Wallet },
+  { href: "/dashboard/campaigns", label: "Campagnes", icon: Megaphone },
 ];
 
 /** Barre du bas sur mobile : 4 raccourcis + « Plus » (lisible à 360 px). */

@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileDown, Pencil, Phone } from "lucide-react";
+import {
+  ArrowLeft,
+  FileDown,
+  MessageCircle,
+  Pencil,
+  Phone,
+} from "lucide-react";
 
+import { OrderCampaignForm } from "@/components/campaigns/order-campaign-form";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Notice } from "@/components/documents/notice";
 import { PrepareInvoiceForm } from "@/components/invoices/invoice-forms";
@@ -16,6 +23,10 @@ import { TransitionActions } from "@/components/orders/transition-actions";
 import { Button } from "@/components/ui/button";
 import { getBusinessContext } from "@/features/businesses/active-business";
 import { listMembers } from "@/features/businesses/team";
+import {
+  getOrderCampaignId,
+  listCampaigns,
+} from "@/features/campaigns/queries";
 import { listOrderInvoices } from "@/features/invoices/queries";
 import { getActiveTrackingLink } from "@/features/tracking/queries";
 import { getOrder, type OrderEvent } from "@/features/orders/queries";
@@ -35,6 +46,7 @@ import { can } from "@/lib/permissions/roles";
 import { formatPhone } from "@/lib/phone";
 import { formatDate, formatDateTime, todayLocal } from "@/lib/time";
 import { cn } from "@/lib/utils";
+import { whatsappLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = { title: "Commande" };
 
@@ -82,12 +94,15 @@ export default async function OrderPage({
 }: PageProps<"/dashboard/orders/[id]">) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const { business } = await getBusinessContext();
-  const [order, members, invoices, tracking] = await Promise.all([
-    getOrder(business.id, id),
-    listMembers(business.id),
-    listOrderInvoices(business.id, id),
-    getActiveTrackingLink(business.id, id),
-  ]);
+  const [order, members, invoices, tracking, campaigns, campaignId] =
+    await Promise.all([
+      getOrder(business.id, id),
+      listMembers(business.id),
+      listOrderInvoices(business.id, id),
+      getActiveTrackingLink(business.id, id),
+      listCampaigns(business.id),
+      getOrderCampaignId(business.id, id),
+    ]);
   if (!order) notFound();
 
   const template = getProfessionTemplate(
@@ -172,14 +187,29 @@ export default async function OrderPage({
             ) : null}
           </Link>
           {order.customer.phone ? (
-            <Button asChild variant="outline" size="icon">
-              <a
-                href={`tel:${order.customer.phone}`}
-                aria-label={`Appeler ${order.customer.name}`}
-              >
-                <Phone aria-hidden="true" />
-              </a>
-            </Button>
+            <>
+              <Button asChild variant="outline" size="icon">
+                <a
+                  href={whatsappLink(
+                    order.customer.phone,
+                    `Bonjour ${order.customer.name}, au sujet de votre commande ${order.code} chez ${business.name} : `,
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Écrire à ${order.customer.name} sur WhatsApp`}
+                >
+                  <MessageCircle aria-hidden="true" />
+                </a>
+              </Button>
+              <Button asChild variant="outline" size="icon">
+                <a
+                  href={`tel:${order.customer.phone}`}
+                  aria-label={`Appeler ${order.customer.name}`}
+                >
+                  <Phone aria-hidden="true" />
+                </a>
+              </Button>
+            </>
           ) : null}
         </section>
 
@@ -433,6 +463,19 @@ export default async function OrderPage({
                     ].join(" ")
                   : null
               }
+            />
+          </section>
+        ) : null}
+
+        {canWrite && (campaigns.length || campaignId) ? (
+          <section aria-labelledby="provenance" className="flex flex-col gap-3">
+            <h2 id="provenance" className="text-lg font-semibold">
+              Provenance
+            </h2>
+            <OrderCampaignForm
+              orderId={order.id}
+              current={campaignId}
+              campaigns={campaigns}
             />
           </section>
         ) : null}

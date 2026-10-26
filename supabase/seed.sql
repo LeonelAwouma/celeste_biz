@@ -178,3 +178,23 @@ select public.save_website('bbbbbbbb-0000-4000-8000-000000000001', 1, 'catering'
     "service_ids": ["cb100000-0000-4000-8000-000000000001"]}'::jsonb);
 select public.publish_website('bbbbbbbb-0000-4000-8000-000000000001', 2);
 select set_config('request.jwt.claims', '', true);
+
+-- Campagne de démonstration (Phase 10) : lien court vers WhatsApp d'Alice.
+update public.businesses set whatsapp_phone_e164 = '+237690000001'
+where id = 'aaaaaaaa-0000-4000-8000-000000000001';
+
+insert into public.campaign_links (id, business_id, public_id, code, label, source, catalog_item_id,
+  message, click_count, last_click_at, created_by, created_at)
+values ('0ca00000-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001', 'demoRobeWax1',
+  'ROBE-WAX', 'Robes en wax — statut WhatsApp', 'whatsapp_status', 'ca100000-0000-4000-8000-000000000001',
+  'Bonjour, je souhaite une robe sur mesure en wax.', 12, now() - interval '1 day',
+  'a1111111-1111-4111-8111-111111111111', now() - interval '10 days');
+
+insert into public.campaign_clicks_daily (campaign_id, business_id, day, clicks)
+select '0ca00000-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001',
+  (now() at time zone 'Africa/Douala')::date - d, c
+from (values (1, 3), (2, 5), (8, 4)) v(d, c);
+
+insert into public.order_campaigns (order_id, business_id, campaign_id, set_by)
+values ('0da00000-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001',
+  '0ca00000-0000-4000-8000-000000000001', 'a1111111-1111-4111-8111-111111111111');

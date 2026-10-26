@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ChevronRight, ClipboardList, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  ClipboardList,
+  MessageCircle,
+  Phone,
+  Plus,
+} from "lucide-react";
 
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CustomerForm } from "@/components/customers/customer-form";
@@ -16,6 +23,7 @@ import { getCustomerBalance, listOrders } from "@/features/orders/queries";
 import { formatXaf } from "@/lib/monetary/xaf";
 import { formatPhone } from "@/lib/phone";
 import { can } from "@/lib/permissions/roles";
+import { whatsappLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = { title: "Fiche client" };
 
@@ -64,6 +72,29 @@ export default async function CustomerPage({
               : "Sans téléphone"
         }
       />
+      {customer.phone_e164 && !customer.archived_at ? (
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <Button asChild variant="outline">
+            <a
+              href={whatsappLink(
+                customer.phone_e164,
+                `Bonjour ${customer.name}, `,
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle aria-hidden="true" />
+              WhatsApp
+            </a>
+          </Button>
+          <Button asChild variant="outline">
+            <a href={`tel:${customer.phone_e164}`}>
+              <Phone aria-hidden="true" />
+              Appeler
+            </a>
+          </Button>
+        </div>
+      ) : null}
       {query.enregistre === "1" ? (
         <p
           role="status"

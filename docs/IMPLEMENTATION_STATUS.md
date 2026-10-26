@@ -17,8 +17,8 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | 7     | Tableau « Aujourd'hui »                          | ✅ terminée |
 | 8     | Portail client privé (**premier pilote**)        | ✅ terminée |
 | 9     | Site web métier optionnel                        | ✅ terminée |
-| 10    | WhatsApp sans automatisation, liens de campagne  | ⏭ suivante  |
-| 11    | Exports, supervision, qualité de production      | à faire     |
+| 10    | WhatsApp sans automatisation, liens de campagne  | ✅ terminée |
+| 11    | Exports, supervision, qualité de production      | ⏭ suivante  |
 | 12    | Pilotage terrain, optimisation réseau            | à faire     |
 | 13    | Paiements en ligne (feature flag)                | à faire     |
 | 14    | WhatsApp Business Cloud API (feature flag)       | à faire     |
@@ -802,3 +802,82 @@ générique, éditeur simple, prévisualisation, publication explicite,
 **Phase 10 — WhatsApp sans automatisation et traçabilité de campagne** :
 liens `wa.me` et messages préremplis, codes campagne, partage de devis et
 de suivi, métriques de clics si mesurables sans suivi abusif.
+
+---
+
+## Phase 10 — WhatsApp sans automatisation et liens de campagne
+
+**Date :** 2026-10-26 · décisions : `docs/adr/0011-whatsapp-campaign-links.md`
+
+### Réalisé
+
+- Migration `20261026000006_campaigns.sql` : `campaign_links` (code lisible
+  unique par entreprise, identifiant public aléatoire, canal, article
+  facultatif, message prérempli, archivage), `campaign_clicks_daily`
+  (compteurs par jour uniquement), `order_campaigns` (provenance déclarée
+  d'une commande) ; fonctions `create_campaign_link`,
+  `update_campaign_link`, `set_order_campaign`, `list_campaigns` et
+  `open_campaign_link` (anonyme).
+- Lien court `/c/<identifiant>` : redirection 302 vers `wa.me` sur le
+  numéro WhatsApp de l'entreprise, message prérempli terminé par
+  « Réf. CODE » ; campagne archivée ou numéro absent : page « Lien
+  indisponible » (410) ; robots d'aperçu redirigés mais non comptés.
+- Écrans « Campagnes » (menu « Plus ») : liste active/archivée avec clics
+  et commandes, création (code proposé à partir du nom, message proposé à
+  partir de l'article, aperçu du message reçu), page de campagne (lien à
+  copier ou partager, clics totaux, 7 jours, histogramme 14 jours,
+  commandes et montant déclarés, modification et archivage).
+- Fiche commande : « Provenance » (campagne choisie d'après la référence
+  lue dans la conversation) et bouton WhatsApp vers le client. Fiche
+  client : boutons WhatsApp et Appeler. Facture émise : « Envoyer par
+  WhatsApp » (message prêt, PDF à joindre). Devis et suivi : déjà
+  partageables depuis les phases 6 et 8.
+- Données de démonstration : numéro WhatsApp d'Alice, campagne
+  `ROBE-WAX` (`/c/demoRobeWax1`) avec quelques clics et une commande.
+
+### Tests exécutés et résultats
+
+| Commande                   | Résultat                                              |
+| -------------------------- | ----------------------------------------------------- |
+| `npm run lint`             | ✅                                                    |
+| `npm run typecheck`        | ✅                                                    |
+| `npm run test`             | ✅ 18 fichiers, 183 tests                             |
+| `npm run format:check`     | ✅                                                    |
+| `npm run test:db`          | ✅ pgTAP 324/324 (9 fichiers)                         |
+| `npm run test:integration` | ✅                                                    |
+| `npm run build`            | ✅                                                    |
+| `npm run test:e2e`         | ✅ 103 tests (6 ignorés car propres à l'autre profil) |
+
+### Critères d'acceptation (cahier §11, phase 10)
+
+- Le client ouvre le bon numéro et la bonne référence : redirection vers
+  `wa.me/<numéro de l'entreprise>` avec le message et « Réf. CODE »
+  vérifiée en pgTAP et en E2E (lien créé et lien de démonstration).
+- Fonctionne sans API WhatsApp : uniquement des liens `wa.me` ; aucune
+  lecture de conversation ; la provenance est déclarée par l'équipe.
+- Métriques sans suivi abusif : compteur par jour, ni IP, ni cookie, ni
+  agent utilisateur enregistrés (structure vérifiée en pgTAP) ; aperçus
+  automatiques exclus ; plafond de comptage par fenêtre de 10 minutes.
+
+### Sécurité / tenancy vérifiées
+
+- Campagnes, clics et provenances illisibles pour `anon` et les autres
+  entreprises ; création et modification réservées au propriétaire et au
+  gestionnaire ; provenance par l'équipe (employé inclus) ; campagne
+  d'une autre entreprise refusée (pgTAP).
+- Déclarer une provenance ne change pas la date de mise à jour visible
+  sur le suivi client.
+
+### Limites et décisions à valider
+
+- Les clics restent approximatifs (aperçus non reconnus, clics répétés
+  d'une même personne comptés) : présentés comme indicatifs.
+- Le code d'une campagne n'est plus modifiable après création (il figure
+  dans les publications) ; le message peut changer.
+- Pas d'export ni de comparaison entre campagnes (Phase 11).
+
+### Prochaine phase
+
+**Phase 11 — Exports, supervision et qualité de production** : CSV
+sécurisés, supervision, audit, quotas, sauvegardes, configuration
+Vercel/Supabase, documentation utilisateurs.

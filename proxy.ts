@@ -9,7 +9,8 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Tout sauf les ressources statiques, les images et les routes publiques
-    // qui n'ont pas besoin de session (suivi client, sites publics).
-    "/((?!_next/static|_next/image|favicon.ico|suivi/|sites/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // qui n'ont pas besoin de session (suivi client, sites publics, liens de
+    // campagne).
+    "/((?!_next/static|_next/image|favicon.ico|suivi/|sites/|c/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

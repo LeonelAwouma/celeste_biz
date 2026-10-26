@@ -28,6 +28,7 @@ const PERMISSIONS = {
   "payments.cancel": ["owner", "manager"],
   "invoices.write": ["owner", "manager"],
   "website.write": ["owner", "manager"],
+  "campaigns.write": ["owner", "manager"],
   "business.read": ["owner", "manager", "staff", "viewer"],
 } as const satisfies Record<string, readonly BusinessRole[]>;
 

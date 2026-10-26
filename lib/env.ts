@@ -33,3 +33,13 @@ export function getAppUrl(): string {
     "",
   );
 }
+
+/**
+ * Émission définitive des factures et avoirs : désactivée tant que la
+ * conformité fiscale n'est pas validée. Il faut aussi l'interrupteur
+ * plateforme en base (`fiscal_invoice_issue_enabled()`), qui reste la
+ * barrière de référence.
+ */
+export function isFiscalInvoiceIssueEnabled(): boolean {
+  return process.env.FEATURE_FISCAL_INVOICE_ISSUE === "true";
+}

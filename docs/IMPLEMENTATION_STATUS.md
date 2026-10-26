@@ -13,8 +13,8 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | 3     | Onboarding et profils métiers                    | ✅ terminée |
 | 4     | Clients et catalogue                             | ✅ terminée |
 | 5     | Commandes et acomptes manuels                    | ✅ terminée |
-| 6     | Devis + facturation (émission sous feature flag) | ⏭ suivante  |
-| 7     | Tableau « Aujourd'hui »                          | à faire     |
+| 6     | Devis + facturation (émission sous feature flag) | ✅ terminée |
+| 7     | Tableau « Aujourd'hui »                          | ⏭ suivante  |
 | 8     | Portail client privé (**premier pilote**)        | à faire     |
 | 9     | Site web métier optionnel                        | à faire     |
 | 10    | WhatsApp sans automatisation, liens de campagne  | à faire     |
@@ -34,8 +34,11 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | `FEATURE_WHATSAPP_API`         | `false` | WhatsApp Business Cloud API / chatbot    |
 | `FEATURE_OFFLINE_DRAFTS`       | `false` | Brouillons hors ligne navigateur         |
 
-Les flags sont déclarés dans `.env.example` ; leur lecture côté serveur sera
-implémentée à la première phase qui en a besoin.
+Les flags sont déclarés dans `.env.example` ; chacun est lu côté serveur à
+la première phase qui en a besoin. `FEATURE_FISCAL_INVOICE_ISSUE` est lu
+depuis la Phase 6 (`lib/env.ts`) et ne suffit pas seul : l'émission exige
+aussi l'interrupteur plateforme en base (`private.platform_flags`,
+désactivé), qui reste la barrière de référence.
 
 ---
 
@@ -461,3 +464,103 @@ par entreprise, acomptes manuels et solde exacts, vues « En cours » et
 **Phase 6 — Devis + module documentaire** : brouillons de devis, PDF,
 acceptation, conversion en commande, factures en brouillon, reçus manuels
 clairement marqués ; émission définitive derrière feature flag.
+
+---
+
+## Phase 6 — Devis et facturation (émission sous interrupteur)
+
+**Date :** 2026-10-26 · décisions : `docs/adr/0007-quotes-invoices-documents.md`
+
+### Réalisé
+
+- Migration `20261026000002_quotes_invoices.sql` : `quotes`, `quote_items`,
+  `invoices`, `invoice_items`, `credit_notes`, compteurs `DEV`, `FAC`, `AV`
+  par entreprise et par année, profil de facturation (`fiscal_profile`),
+  interrupteur plateforme `fiscal_invoice_issue` (désactivé), bucket privé
+  `documents`, déclencheurs d'immuabilité des pièces émises.
+- Devis (module facultatif « Devis ») : liste filtrée (en cours, acceptés,
+  refusés ou expirés, tous), création et modification en brouillon avec le
+  même éditeur de lignes que les commandes, validité (15 jours proposés),
+  conditions imprimées, notes internes.
+- Cycle du devis : brouillon → envoyé → accepté / refusé / expiré, retour en
+  brouillon pour corriger, annulation avec motif (propriétaire ou
+  gestionnaire). L'acceptation est **déclarée manuellement** : auteur, date
+  et note de provenance enregistrés (`acceptance_source = manual`).
+- Devis accepté → commande confirmée en un geste (lignes et prix copiés,
+  date de remise facultative), idempotent ; lien conservé entre devis et
+  commande.
+- Partage : PDF du devis et lien `wa.me` avec un message prérempli
+  (aucun envoi automatique).
+- Factures : « Préparer une facture » depuis une commande (propriétaire ou
+  gestionnaire) crée un **brouillon sans numéro** ; échéance, conditions,
+  reprise des lignes de la commande, abandon du brouillon. Le PDF du
+  brouillon porte le filigrane « Brouillon — non valable comme facture ».
+- Émission définitive : bouton désactivé avec explication tant que la
+  conformité n'est pas validée ; si elle est activée (variable + base) :
+  numéro `FAC` attribué à l'émission, vendeur et acheteur figés, PDF
+  archivé une seule fois avec son empreinte SHA-256, correction par avoir
+  (`AV`) uniquement.
+- Profil de facturation dans les paramètres (raison sociale, NIU, RCCM,
+  régime, adresse, contacts, mentions) : saisi par le propriétaire, non
+  vérifié par Céleste Biz, et dit comme tel.
+- Reçu PDF pour chaque encaissement : « déclaré, non vérifié auprès de
+  l'opérateur », « n'est pas une facture et n'a pas de valeur fiscale ».
+- Fiche commande : section Facturation (brouillons et factures liés) et
+  lien « Reçu PDF » par encaissement.
+- Données de démonstration : un devis envoyé chez Alice (Paul Etoga,
+  82 000 FCFA).
+
+### Tests exécutés et résultats
+
+| Commande                   | Résultat                                             |
+| -------------------------- | ---------------------------------------------------- |
+| `npm run lint`             | ✅                                                   |
+| `npm run typecheck`        | ✅                                                   |
+| `npm run test`             | ✅ 14 fichiers, 155 tests                            |
+| `npm run format:check`     | ✅                                                   |
+| `npm run test:db`          | ✅ pgTAP 204/204 (5 fichiers)                        |
+| `npm run test:integration` | ✅                                                   |
+| `npm run build`            | ✅                                                   |
+| `npm run test:e2e`         | ✅ 84 tests (5 ignorés car propres à l'autre profil) |
+
+Vérification manuelle supplémentaire en local, interrupteurs activés puis
+désactivés : émission `FAC-2026-0003`, PDF archivé dans `documents`, deux
+téléchargements à l'empreinte identique, avoir émis et archivé.
+
+### Critères d'acceptation (cahier §11, phase 6)
+
+- Totaux cohérents : calcul SQL au centime (remise, taxe 19,25 %) vérifié
+  en pgTAP ; conversion devis → commande au même montant.
+- PDF privés : routes authentifiées, en-tête `Cache-Control: private,
+no-store`, bucket privé, lecture par les seuls membres ; 404 pour une
+  autre entreprise (E2E).
+- Numérotation atomique à l'émission : aucun numéro consommé tant que
+  l'émission est refusée (pgTAP).
+- Documents émis immuables : modification, suppression et changement de
+  lignes refusés même au superutilisateur, sauf l'archivage unique du PDF.
+- Corrections par avoir : montant borné au reste à créditer.
+- Brouillon et émis clairement distingués (titre, filigrane, bandeau).
+
+### Sécurité / tenancy vérifiées
+
+- pgTAP : RLS sur les cinq tables, aucune écriture directe, devis et
+  factures d'une autre entreprise invisibles et non modifiables, client
+  d'une autre entreprise refusé, employé sans annulation de devis ni
+  préparation de facture, profil de facturation réservé au propriétaire.
+- E2E : devis d'une autre entreprise introuvable (page et PDF), employé
+  sans « Préparer une facture » ni « Annuler le devis ».
+
+### Limites et décisions à valider
+
+- L'émission définitive reste **désactivée** : il faut une validation
+  réglementaire (mentions obligatoires, éventuelle certification) avant
+  d'activer l'interrupteur en base et la variable.
+- Le lien client d'acceptation en ligne (`acceptance_source = link`) est
+  prévu pour la Phase 8 (portail client).
+- PDF en polices standard (Helvetica) : caractères hors Latin-1 remplacés.
+- Pas de liste de factures par client ni d'export comptable (Phase 11).
+
+### Prochaine phase
+
+**Phase 7 — Tableau « Aujourd'hui »** : priorités du jour (à remettre, en
+retard, à encaisser, devis sans réponse), actions rapides.

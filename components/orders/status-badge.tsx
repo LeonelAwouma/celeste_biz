@@ -3,15 +3,8 @@ import type {
   OrderState,
   ProfessionTemplate,
 } from "@/features/professions/schema";
+import { TONE_CLASSES } from "@/components/ui/tone-badge";
 import { cn } from "@/lib/utils";
-
-const TONE_CLASSES = {
-  neutral: "bg-muted text-muted-foreground",
-  info: "bg-accent text-accent-foreground",
-  progress: "bg-warning text-warning-foreground",
-  success: "bg-success text-success-foreground",
-  danger: "bg-destructive/10 text-destructive",
-} as const;
 
 export function StatusBadge({
   status,

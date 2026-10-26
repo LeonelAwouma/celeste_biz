@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Pencil, Phone } from "lucide-react";
+import { ArrowLeft, FileDown, Pencil, Phone } from "lucide-react";
 
 import { PageHeader } from "@/components/dashboard/page-header";
+import { Notice } from "@/components/documents/notice";
+import { PrepareInvoiceForm } from "@/components/invoices/invoice-forms";
+import { InvoiceStatusBadge } from "@/components/invoices/invoice-status-badge";
 import { CancelPaymentForm } from "@/components/orders/cancel-payment-form";
 import { OrderDetailsView } from "@/components/orders/order-details-view";
 import { PaymentForm } from "@/components/orders/payment-form";
@@ -12,6 +15,7 @@ import { TransitionActions } from "@/components/orders/transition-actions";
 import { Button } from "@/components/ui/button";
 import { getBusinessContext } from "@/features/businesses/active-business";
 import { listMembers } from "@/features/businesses/team";
+import { listOrderInvoices } from "@/features/invoices/queries";
 import { getOrder, type OrderEvent } from "@/features/orders/queries";
 import {
   PAYMENT_METHOD_LABELS,
@@ -76,9 +80,10 @@ export default async function OrderPage({
 }: PageProps<"/dashboard/orders/[id]">) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const { business } = await getBusinessContext();
-  const [order, members] = await Promise.all([
+  const [order, members, invoices] = await Promise.all([
     getOrder(business.id, id),
     listMembers(business.id),
+    listOrderInvoices(business.id, id),
   ]);
   if (!order) notFound();
 
@@ -129,6 +134,11 @@ export default async function OrderPage({
         >
           Modifications enregistrées.
         </p>
+      ) : null}
+      {query.depuis_devis === "1" ? (
+        <Notice className="mb-4">
+          Commande créée à partir du devis accepté.
+        </Notice>
       ) : null}
       {query.acompte === "echec" ? (
         <p
@@ -358,6 +368,15 @@ export default async function OrderPage({
                       ? ` — motif : ${payment.cancelReason}`
                       : ""}
                   </p>
+                  <a
+                    href={`/dashboard/orders/${order.id}/recus/${payment.id}`}
+                    target="_blank"
+                    rel="noopener"
+                    className="mt-1 inline-flex min-h-9 items-center gap-1 text-sm text-primary"
+                  >
+                    <FileDown aria-hidden="true" className="size-4" />
+                    Reçu PDF
+                  </a>
                   {payment.status === "manual_declared" &&
                   order.status !== "closed" &&
                   can(business.role, "payments.cancel") ? (
@@ -383,6 +402,50 @@ export default async function OrderPage({
                 today={todayLocal()}
               />
             </div>
+          ) : null}
+        </section>
+
+        <section aria-labelledby="facturation" className="flex flex-col gap-3">
+          <h2 id="facturation" className="text-lg font-semibold">
+            Facturation
+          </h2>
+          {invoices.length ? (
+            <ul
+              className="divide-y rounded-xl border bg-card"
+              aria-label="Factures de la commande"
+            >
+              {invoices.map((invoice) => (
+                <li key={invoice.id}>
+                  <Link
+                    href={`/dashboard/invoices/${invoice.id}`}
+                    className="flex min-h-12 items-center justify-between gap-3 px-4 py-3 hover:bg-accent"
+                  >
+                    <span className="flex min-w-0 flex-col gap-1">
+                      <span className="font-medium">
+                        {invoice.number ?? "Brouillon de facture"}
+                      </span>
+                      <InvoiceStatusBadge
+                        status={invoice.status}
+                        className="self-start"
+                      />
+                    </span>
+                    <span className="shrink-0 text-sm font-medium">
+                      {formatXaf(invoice.total)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Aucune facture pour cette commande.
+            </p>
+          )}
+          {can(business.role, "invoices.write") &&
+          order.status !== "draft" &&
+          order.status !== "cancelled" &&
+          !invoices.some((invoice) => invoice.status === "draft") ? (
+            <PrepareInvoiceForm orderId={order.id} />
           ) : null}
         </section>
 

@@ -136,3 +136,27 @@ insert into public.order_events (business_id, order_id, actor_id, type, to_statu
 select business_id, id, created_by, 'created', 'confirmed', created_at from public.orders;
 
 select private.recompute_order(id) from public.orders;
+
+-- Devis de démonstration (Phase 6) : un devis envoyé, en attente de réponse.
+insert into private.document_counters (business_id, prefix, year, last_value)
+values ('aaaaaaaa-0000-4000-8000-000000000001', 'DEV', extract(year from now() at time zone 'Africa/Douala')::int, 1);
+
+insert into public.quotes (id, business_id, customer_id, code, status, valid_until, conditions, sent_at, created_by, created_at)
+values
+  ('0fa00000-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001',
+   'c1a00000-0000-4000-8000-000000000002',
+   format('DEV-%s-0001', extract(year from now() at time zone 'Africa/Douala')), 'sent',
+   (now() at time zone 'Africa/Douala')::date + 10, 'Acompte de 50 % à la commande. Délai : 10 jours.',
+   now() - interval '2 days', 'a1111111-1111-4111-8111-111111111111', now() - interval '2 days');
+
+insert into public.quote_items (business_id, quote_id, position, catalog_item_id, name, unit, quantity, unit_price)
+values
+  ('aaaaaaaa-0000-4000-8000-000000000001', '0fa00000-0000-4000-8000-000000000001', 0,
+   'ca100000-0000-4000-8000-000000000001', 'Robe sur mesure', 'pièce', 2, 35000),
+  ('aaaaaaaa-0000-4000-8000-000000000001', '0fa00000-0000-4000-8000-000000000001', 1,
+   null, 'Broderie col et manches', 'pièce', 2, 6000);
+
+update public.quotes q
+set subtotal = t.s, total = t.s
+from (select quote_id, sum(line_net) as s from public.quote_items group by quote_id) t
+where q.id = t.quote_id;

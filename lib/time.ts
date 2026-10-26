@@ -96,3 +96,9 @@ export function formatDate(value: string): string {
   const iso = DATE.test(value) ? `${value}T12:00:00Z` : value;
   return dateFormat.format(new Date(iso));
 }
+
+/** « 2026-11-02 » + n jours (calendrier, sans fuseau). */
+export function addDays(date: string, days: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}

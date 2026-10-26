@@ -15,6 +15,8 @@ const DASHBOARD_PAGES = [
   ["/dashboard/website", "Mon site"],
   ["/dashboard/settings", "Paramètres"],
   ["/dashboard/quotes", "Devis"],
+  ["/dashboard/quotes/new", "Nouveau devis"],
+  ["/dashboard/quotes/0fa00000-0000-4000-8000-000000000001", /^DEV-/],
   ["/dashboard/payments", "Encaissements"],
   ["/dashboard/more", "Plus"],
 ] as const;

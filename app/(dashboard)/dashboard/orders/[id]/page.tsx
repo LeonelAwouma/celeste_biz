@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { Notice } from "@/components/documents/notice";
 import { PrepareInvoiceForm } from "@/components/invoices/invoice-forms";
 import { InvoiceStatusBadge } from "@/components/invoices/invoice-status-badge";
+import { TrackingLinkPanel } from "@/components/tracking/tracking-link-panel";
 import { CancelPaymentForm } from "@/components/orders/cancel-payment-form";
 import { OrderDetailsView } from "@/components/orders/order-details-view";
 import { PaymentForm } from "@/components/orders/payment-form";
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { getBusinessContext } from "@/features/businesses/active-business";
 import { listMembers } from "@/features/businesses/team";
 import { listOrderInvoices } from "@/features/invoices/queries";
+import { getActiveTrackingLink } from "@/features/tracking/queries";
 import { getOrder, type OrderEvent } from "@/features/orders/queries";
 import {
   PAYMENT_METHOD_LABELS,
@@ -80,10 +82,11 @@ export default async function OrderPage({
 }: PageProps<"/dashboard/orders/[id]">) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const { business } = await getBusinessContext();
-  const [order, members, invoices] = await Promise.all([
+  const [order, members, invoices, tracking] = await Promise.all([
     getOrder(business.id, id),
     listMembers(business.id),
     listOrderInvoices(business.id, id),
+    getActiveTrackingLink(business.id, id),
   ]);
   if (!order) notFound();
 
@@ -404,6 +407,35 @@ export default async function OrderPage({
             </div>
           ) : null}
         </section>
+
+        {canWrite && order.status !== "draft" ? (
+          <section aria-labelledby="suivi" className="flex flex-col gap-3">
+            <h2 id="suivi" className="text-lg font-semibold">
+              Suivi client
+            </h2>
+            <TrackingLinkPanel
+              orderId={order.id}
+              orderCode={order.code}
+              businessName={business.name}
+              customerName={order.customer.name}
+              customerPhone={order.customer.phone}
+              active={tracking}
+              activeSummary={
+                tracking
+                  ? [
+                      `Créé le ${formatDateTime(tracking.createdAt)}, valable jusqu'au ${formatDateTime(tracking.expiresAt)}.`,
+                      tracking.viewCount
+                        ? `Consulté ${tracking.viewCount} fois (dernière fois le ${formatDateTime(tracking.lastViewedAt!)}).`
+                        : "Pas encore consulté.",
+                      tracking.showAmounts
+                        ? "Montants visibles."
+                        : "Montants masqués.",
+                    ].join(" ")
+                  : null
+              }
+            />
+          </section>
+        ) : null}
 
         <section aria-labelledby="facturation" className="flex flex-col gap-3">
           <h2 id="facturation" className="text-lg font-semibold">

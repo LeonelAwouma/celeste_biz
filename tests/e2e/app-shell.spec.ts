@@ -72,8 +72,16 @@ test("le lien d'évitement mène au contenu au clavier", async ({ page }) => {
 test("une route de suivi inconnue répond « page introuvable »", async ({
   page,
 }) => {
-  const response = await page.goto("/suivi/jeton-inexistant");
-  expect(response?.status()).toBe(404);
+  // Jeton mal formé ou inconnu : même page, rien à énumérer. La page est
+  // diffusée en flux (statut fixé avant la vérification du jeton).
+  const malformed = await page.goto("/suivi/jeton-inexistant");
+  await expect(
+    page.getByRole("heading", { name: "Page introuvable" }),
+  ).toBeVisible();
+  expect(malformed?.headers()["x-robots-tag"]).toContain("noindex");
+  expect(malformed?.headers()["referrer-policy"]).toBe("no-referrer");
+  const unknown = await page.goto(`/suivi/${"A".repeat(43)}`);
+  expect(unknown?.status()).toBe(malformed?.status());
   await expect(
     page.getByRole("heading", { name: "Page introuvable" }),
   ).toBeVisible();

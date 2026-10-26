@@ -15,8 +15,8 @@ de terminé). Mettre à jour ce fichier à la fin de chaque phase.
 | 5     | Commandes et acomptes manuels                    | ✅ terminée |
 | 6     | Devis + facturation (émission sous feature flag) | ✅ terminée |
 | 7     | Tableau « Aujourd'hui »                          | ✅ terminée |
-| 8     | Portail client privé (**premier pilote**)        | ⏭ suivante  |
-| 9     | Site web métier optionnel                        | à faire     |
+| 8     | Portail client privé (**premier pilote**)        | ✅ terminée |
+| 9     | Site web métier optionnel                        | ⏭ suivante  |
 | 10    | WhatsApp sans automatisation, liens de campagne  | à faire     |
 | 11    | Exports, supervision, qualité de production      | à faire     |
 | 12    | Pilotage terrain, optimisation réseau            | à faire     |
@@ -631,3 +631,89 @@ retard, à encaisser, devis sans réponse), actions rapides.
 
 **Phase 8 — Portail client privé** (premier pilote) : lien de suivi à jeton
 haché, expiration et révocation, pièces partageables.
+
+---
+
+## Phase 8 — Portail client privé (premier pilote utilisable)
+
+**Date :** 2026-10-26 · décisions : `docs/adr/0009-customer-tracking.md`
+
+### Réalisé
+
+- Migration `20261026000004_tracking_links.sql` : table `tracking_links`
+  (seul le SHA-256 du jeton est stocké, colonne non lisible même par les
+  membres), expiration de 1 à 365 jours, révocation, compteur de
+  consultations ; limite de tentatives (`private.rate_limits`, fenêtres de
+  10 minutes) ; fonctions `create_tracking_link`, `revoke_tracking_link`,
+  `get_tracking_view` et `get_tracking_document` (seules portes d'entrée
+  anonymes).
+- Fiche commande : section « Suivi client » (propriétaire, gérant,
+  employé ; pas pour un brouillon). Le lien n'est montré qu'à sa création,
+  avec « Copier » et « WhatsApp » (`wa.me`, message prérempli). Durée au
+  choix, montants et pièces partageables ou non. Un nouveau lien révoque
+  l'ancien. Le commerçant voit les dates, le nombre de consultations et
+  peut révoquer.
+- Page `/suivi/<jeton>` sans compte, pensée pour 360 px : état et étapes
+  avec les libellés du métier, étape de fabrication, dernière mise à jour,
+  échéance indicative, articles, total / déjà réglé / reste à payer (si
+  autorisé), historique des états (sans motif ni auteur), reçus et
+  factures émises en PDF (si autorisé), bouton WhatsApp vers le commerce.
+  Lien expiré ou révoqué : message clair et contact, aucune donnée.
+- En-têtes sur `/suivi/*` : `Referrer-Policy: no-referrer`,
+  `X-Robots-Tag: noindex, nofollow`, `Cache-Control: private, no-store`.
+
+### Tests exécutés et résultats
+
+| Commande                   | Résultat                                             |
+| -------------------------- | ---------------------------------------------------- |
+| `npm run lint`             | ✅                                                   |
+| `npm run typecheck`        | ✅                                                   |
+| `npm run test`             | ✅ 16 fichiers, 168 tests                            |
+| `npm run format:check`     | ✅                                                   |
+| `npm run test:db`          | ✅ pgTAP 258/258 (7 fichiers)                        |
+| `npm run test:integration` | ✅                                                   |
+| `npm run build`            | ✅                                                   |
+| `npm run test:e2e`         | ✅ 92 tests (5 ignorés car propres à l'autre profil) |
+
+### Critères d'acceptation (cahier §11, phase 8)
+
+- Aucun client n'accède au dossier d'un autre : le jeton ne résout qu'une
+  commande ; un reçu d'une autre commande est refusé (pgTAP) ; Bob ne crée
+  ni ne révoque de lien sur les commandes d'Alice (pgTAP).
+- Jeton non devinable : 256 bits aléatoires (`gen_random_bytes`), seul son
+  condensat est en base, jeton inconnu ou mal formé = même réponse
+  « introuvable », 30 échecs par client bloquent 10 minutes (pgTAP).
+- Lien expiré ou révoqué rejeté, sans aucune donnée de commande (pgTAP,
+  E2E après révocation).
+- Documents privés protégés : PDF seulement via un jeton valide autorisant
+  les pièces, réponse `no-store` ; 404 après révocation (E2E). Aucune note
+  interne ni détail de fabrication exposé (pgTAP et E2E).
+
+### Sécurité / tenancy vérifiées
+
+- Table illisible pour `anon` ; `token_hash` illisible pour tous les rôles
+  applicatifs ; les fonctions anonymes sont `SECURITY DEFINER` et ne
+  renvoient que des champs choisis.
+- Contexte E2E vierge (aucun cookie) pour la consultation client.
+
+### Limites et décisions à valider
+
+- Les PDF partagés sont produits à la volée depuis les instantanés figés
+  (facture) ou la commande (reçu), sans URL signée de stockage : celle-ci
+  exigerait `SUPABASE_SECRET_KEY` côté serveur, non fourni. L'original
+  archivé de la facture reste la référence côté commerçant.
+- La clé de limitation est le condensat de l'adresse IP transmise par
+  l'hébergeur (`x-forwarded-for`) : plusieurs clients derrière une même
+  passerelle opérateur partagent la limite d'échecs (une requête valide
+  n'est pas comptée comme échec). À revoir avec les mesures du pilote.
+- Une page de suivi inconnue est diffusée en flux : elle affiche
+  « Page introuvable » mais le statut HTTP est fixé avant la vérification
+  du jeton ; elle n'est jamais indexée (`noindex`).
+- Le lien n'est pas réaffichable (condensat seul) : pour le renvoyer, le
+  commerçant en crée un nouveau.
+
+### Prochaine phase
+
+**Phase 9 — Site web métier optionnel** : modèles couture, traiteur et
+générique, éditeur simple, prévisualisation, publication explicite,
+`/sites/[slug]`, contact WhatsApp.

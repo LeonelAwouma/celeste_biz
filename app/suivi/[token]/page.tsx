@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { Suspense } from "react";
+
+import { LoadingState } from "@/components/feedback/loading-state";
+import { TrackingDetails } from "@/components/tracking/tracking-details";
 
 export const metadata: Metadata = {
+  title: "Suivi de commande",
   robots: { index: false, follow: false },
+  referrer: "no-referrer",
 };
 
-// Route réservée au suivi client privé (Phase 8). Aucun jeton n'est valide
-// pour l'instant : réponse identique quel que soit le jeton (anti-énumération).
-export default function TrackingPage() {
-  notFound();
+// Suivi client sans compte : le jeton est vérifié en base (condensat), un
+// jeton inconnu donne toujours la même page « introuvable ».
+export default function TrackingPage({ params }: PageProps<"/suivi/[token]">) {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <TrackingDetails tokenPromise={params.then((p) => p.token)} />
+    </Suspense>
+  );
 }

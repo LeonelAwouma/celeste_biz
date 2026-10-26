@@ -86,7 +86,7 @@ export function CatalogImageForm({ itemId }: { itemId: string }) {
           onChange={onChange}
         />
       </label>
-      <SubmitButton pendingLabel="Envoi…" disabled={preparing || !selected}>
+      <SubmitButton pendingLabel="Envoi…" disabled={preparing}>
         {preparing ? "Préparation de la photo…" : "Enregistrer la photo"}
       </SubmitButton>
     </form>
